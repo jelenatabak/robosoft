@@ -1,0 +1,16 @@
+z: 0.835
+r: 0.09
+
+y1: 0.64
+y2: 0.99
+
+x1: -0.49
+x2: -0.29
+x3: -0.02
+x4: -0.02
+x5: 0.18
+x6: 0.38
+
+planning_group: 'panda_arm'
+base_frame: 'panda_link0'
+camera_frame: 'panda_camera'

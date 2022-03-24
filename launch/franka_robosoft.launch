@@ -1,0 +1,13 @@
+<launch>
+    <rosparam command="load" file="$(find robosoft)/resources/config.yaml" ns='robosoft'/>
+
+    <include file="$(find realsense2_camera)/launch/rs_rgbd.launch" />
+    <include file="$(find dynamixel_workbench_controllers)/launch/dynamixel_controllers.launch" />
+    <include file="$(find panda_moveit_config)/launch/panda_control_moveit_rviz.launch">
+        <arg name="load_gripper" value="false"/>
+        <arg name="robot_ip" value="172.16.0.2"/>
+    </include>
+
+    <node pkg="tf" type="static_transform_publisher" name="hand_camera_tf" args="-0.0492027  -0.1906576  -0.0674672   0.01624818  0.00715598 -0.01470204 0.99973428 /panda_link8 /panda_camera 100"/> 
+    <!-- <node pkg="tf" type="static_transform_publisher" name="camera_tf" args="0 0 0 0 0 0 /panda_camera /camera_color_optical_frame 100"/>  -->
+</launch>

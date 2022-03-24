@@ -1,0 +1,16 @@
+z: 0.835
+r: 0.09
+
+y1: 0.21
+y2: 0.42
+
+x1: -0.525
+x2: -0.315
+x3: -0.105
+x4: 0.105
+x5: 0.315
+x6: 0.525
+
+planning_group: 'manipulator'
+base_frame: 'world'
+camera_frame: 'ee_link'
