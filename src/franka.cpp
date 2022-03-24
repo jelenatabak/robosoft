@@ -45,10 +45,16 @@ UR5e::UR5e (ros::NodeHandle& nodeHandle) {
     std::cout << "End effector link: " << move_group_->getEndEffectorLink() << std::endl;
 
     // Add collisions
+    ros::Duration(2).sleep();
+    float z_board;
+    nodeHandle.getParam("/robosoft/z", z_board);
     std::vector<moveit_msgs::CollisionObject> collision_objects;
-    collision_objects.push_back(addBox("table", 1,2,0.35,0.3,0,0));
+    collision_objects.push_back(addBox("board", 0.53,1.27,z_board+0.01,0.55,0,0));
     planning_scene_interface_.addCollisionObjects(collision_objects);
     std::cout << "Added collision" << std::endl;
+
+    // attachObject(0.03, 0.21);
+    // std::cout << "Added gripper" << std::endl;
 
     std::cout << "Robot is ready!" << std::endl;
 }
@@ -57,24 +63,31 @@ void UR5e::control() {
     while (ros::ok()) {
         if (joint_) {
             goToJointGoal();
+            missionDoneClient_.call(trigger);
         }
         else if (pose_){
             goToPoseGoal();
+            missionDoneClient_.call(trigger);
         }
         else if (path_){
             planCartesianPath();
+            missionDoneClient_.call(trigger);
         }
         else if (position_){
             goToPosition();
+            missionDoneClient_.call(trigger);
         }
         else if (pour_){
             pour();
+            missionDoneClient_.call(trigger);
         }
         else if (open_){
             openGripper();
+            missionDoneClient_.call(trigger);
         }
         else if (close_){
             closeGripper();
+            missionDoneClient_.call(trigger);
         }
     }
 }
@@ -82,6 +95,7 @@ void UR5e::control() {
 void UR5e::goToJointGoal() {
     std::cout << "Moving to joint state" << std::endl;
     try {
+        move_group_->clearPoseTargets();
         move_group_->setMaxVelocityScalingFactor(velocity_scale_);
         move_group_->setStartStateToCurrentState();
         moveit::planning_interface::MoveGroupInterface::Plan my_plan;
@@ -97,7 +111,6 @@ void UR5e::goToJointGoal() {
         }
 
         joint_ = false;
-        missionDoneClient_.call(trigger);
 
 
     } catch (const std::runtime_error& e) {
@@ -108,13 +121,14 @@ void UR5e::goToJointGoal() {
 void UR5e::goToPoseGoal() {
     std::cout << "Moving to pose goal" << std::endl;
     try{
+        move_group_->clearPoseTargets();
         move_group_->setMaxVelocityScalingFactor(velocity_scale_);
         move_group_->setStartStateToCurrentState();
         move_group_->setPoseTarget(poseReference_);
         move_group_->move();
+        std::cout << "Done" << std::endl;
 
         pose_ = false;
-        missionDoneClient_.call(trigger);
 
     } catch (const std::runtime_error& e) {
         std::cout << "Runtime error. Aborting trajectory." << std::endl;
@@ -124,6 +138,7 @@ void UR5e::goToPoseGoal() {
 void UR5e::planCartesianPath() {
     std::cout << "Planning cartesian path" << std::endl;
     try{
+        move_group_->clearPoseTargets();
         moveit_msgs::RobotTrajectory trajectory;
         moveit_msgs::RobotTrajectory trajectory_slow;
 
@@ -141,10 +156,9 @@ void UR5e::planCartesianPath() {
         plan.trajectory_ = trajectory_slow;
         move_group_->setStartStateToCurrentState();
         move_group_->execute(plan);
+        std::cout << "Done" << std::endl;
 
         path_ = false;
-        missionDoneClient_.call(trigger);
-
     } catch (const std::runtime_error& e) {
         std::cout << "Runtime error. Aborting trajectory." << std::endl;
     }
@@ -153,6 +167,7 @@ void UR5e::planCartesianPath() {
 void UR5e::goToPosition() {
     std::cout << "Moving to position goal" << std::endl;
     try{
+        move_group_->clearPoseTargets();
         move_group_->setStartStateToCurrentState();
 
         geometry_msgs::Pose poseRef;
@@ -160,23 +175,22 @@ void UR5e::goToPosition() {
 
         if(parallel_) 
         {
-            poseRef.orientation.x = -0.7071068;
-            poseRef.orientation.y = 0;
-            poseRef.orientation.z = 0;
-            poseRef.orientation.w = 0.7071068;
+            poseRef.orientation.x = -0.5;
+            poseRef.orientation.y = 0.5;
+            poseRef.orientation.z = -0.5;
+            poseRef.orientation.w = 0.5;
         } 
         else if (perpendicular_) {
-            poseRef.orientation.x = 1;
-            poseRef.orientation.y = 0;
+            poseRef.orientation.x = 0.7071068;
+            poseRef.orientation.y = -0.7071068;
             poseRef.orientation.z = 0;
             poseRef.orientation.w = 0;
         }
-        move_group_->setPoseTarget(poseReference_);
+        move_group_->setPoseTarget(poseRef);
         move_group_->move();
+        std::cout << "Done" << std::endl;
 
         position_ = false;
-        missionDoneClient_.call(trigger);
-
     } catch (const std::runtime_error& e) {
         std::cout << "Runtime error. Aborting trajectory." << std::endl;
     }
@@ -185,19 +199,36 @@ void UR5e::goToPosition() {
 void UR5e::pour() {
     std::cout << "Pouring whiskey" << std::endl;
     std::cout << "Not implemented" << std::endl;
+
+    pour_ = false;
 }
 
 void UR5e::openGripper() {
-    std::cout << "Openning gripper" << std::endl;
+    std::cout << "Opening gripper" << std::endl;
     dynamixelCommand_.request.value = openPosition_;
     dynamixelCommandClient_.call(dynamixelCommand_);
+
+    ros::Duration(2).sleep();
+    open_ = false;
 }
 
 void UR5e::closeGripper() {
     std::cout << "Closing gripper" << std::endl;
-    std::cout << "Movement not implemented" << std::endl;
     dynamixelCommand_.request.value = closedPosition_;
     dynamixelCommandClient_.call(dynamixelCommand_);
+
+    if (graspMove_) {
+        geometry_msgs::PoseStamped current = move_group_->getCurrentPose();
+        current.pose.position.x += 0.05;
+        move_group_->clearPoseTargets();
+        move_group_->setStartStateToCurrentState();
+        move_group_->setPoseTarget(current.pose);
+        move_group_->move();
+        std::cout << "Done" << std::endl;
+    }
+
+    ros::Duration(2).sleep();
+    close_ = false;
 }
 
 bool UR5e::goToJointGoalCallback(robosoft::jointGoal::Request &req, robosoft::jointGoal::Response &res){
@@ -267,6 +298,28 @@ moveit_msgs::CollisionObject UR5e::addBox(const char* name, float box_x, float b
   collision_object.operation = collision_object.ADD;
 
   return collision_object;
+}
+
+void UR5e::attachObject(float obj_r, float obj_h) {
+    moveit_msgs::CollisionObject object_to_attach;
+    object_to_attach.id = "gripper";
+
+    shape_msgs::SolidPrimitive primitive;
+    primitive.type = primitive.CYLINDER;
+    primitive.dimensions.resize(2);
+    primitive.dimensions[primitive.CYLINDER_HEIGHT] = obj_h;
+    primitive.dimensions[primitive.CYLINDER_RADIUS] = obj_r;
+
+    object_to_attach.header.frame_id = move_group_->getEndEffectorLink();
+    geometry_msgs::Pose grab_pose;
+    grab_pose.orientation.w = 1.0;
+    grab_pose.position.z = (obj_h / 2) + 0.02;
+
+    object_to_attach.primitives.push_back(primitive);
+    object_to_attach.primitive_poses.push_back(grab_pose);
+    object_to_attach.operation = object_to_attach.ADD;
+    // planning_scene_interface_.applyCollisionObject(object_to_attach);
+    // move_group_->attachObject(object_to_attach.id, move_group_->getEndEffectorLink());
 }
 
 

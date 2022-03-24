@@ -42,6 +42,7 @@ class UR5e {
     bool closeGripperCallback(robosoft::closeGripper::Request &req, robosoft::closeGripper::Response &res);
 
     moveit_msgs::CollisionObject addBox(const char* name, float box_x, float box_y, float box_z, float x, float y, float z);
+    void attachObject(float obj_r, float obj_z);
 
     void control();
     void goToJointGoal();
