@@ -186,6 +186,12 @@ void UR5e::goToPosition() {
             poseRef.orientation.z = 0;
             poseRef.orientation.w = 0;
         }
+        else if (perpendicular_rotate_) {
+            poseRef.orientation.x = 0;
+            poseRef.orientation.y = 1;
+            poseRef.orientation.z = 0;
+            poseRef.orientation.w = 0;  
+        }
         move_group_->setPoseTarget(poseRef);
         move_group_->move();
         std::cout << "Done" << std::endl;
@@ -254,6 +260,7 @@ bool UR5e::goToPositionCallback(robosoft::positionGoal::Request &req, robosoft::
     positionReference_ = req.position;
     parallel_ = req.parallel;
     perpendicular_ = req.perpendicular;
+    perpendicular_rotate_ = req.perpendicular_rotate;
     return true;
 }
 
