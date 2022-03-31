@@ -629,29 +629,34 @@ def main():
         task = myargv[1]
         rospy.init_node('robosoft_control')
         robosoft = Robosoft()
-        robosoft.open_gripper_client.call()
+        # robosoft.open_gripper_client.call()
+        # robosoft.check_mission_done()
+        # print("Gripper open")
+
+        joint_goals = robosoft.read_vector_from_yaml(
+            'ur_test.yaml')
+        robosoft.go_to_joint_goal_client.call(joint_goals)
         robosoft.check_mission_done()
-        print("Gripper open")
+        print("Done!")
+        # joint_goals = robosoft.read_vectors_from_yaml(
+        #     'franka_record_A_joints_list.yaml')
+        # robosoft.record(joint_goals)
+        # robosoft.franka_count_pts()
+        # print("Done with recording")
 
-        joint_goals = robosoft.read_vectors_from_yaml(
-            'franka_record_A_joints_list.yaml')
-        robosoft.record(joint_goals)
-        robosoft.franka_count_pts()
-        print("Done with recording")
+        # robosoft.go_home()
 
-        robosoft.go_home()
-
-        if task == "task1":
-            print("Starting task 1")
-            robosoft.task1()
-        elif task == "task2":
-            print("Starting task 2")
-            robosoft.task2()
-        elif task == "task3":
-            print("Starting task 3")
-            robosoft.task3()
-        else:
-            print("Select among: task1, task2, task3")
+        # if task == "task1":
+        #     print("Starting task 1")
+        #     robosoft.task1()
+        # elif task == "task2":
+        #     print("Starting task 2")
+        #     robosoft.task2()
+        # elif task == "task3":
+        #     print("Starting task 3")
+        #     robosoft.task3()
+        # else:
+        #     print("Select among: task1, task2, task3")
 
         # pt = PointStamped()
         # pt.header.frame_id = robosoft.base_frame

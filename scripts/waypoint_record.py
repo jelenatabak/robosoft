@@ -31,8 +31,10 @@ class Waypoints(object):
 
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
-        self.world_frame = "world"
-        self.eef_frame = "panda_link8"
+        # self.world_frame = "world"
+        # self.eef_frame = "panda_link8"
+        self.world_frame = "base_link"
+        self.eef_frame = "tool0"
 
         self.record_service = rospy.Service(
             "/waypoint_record", waypoint_record, self._waypoint_record_callback)
