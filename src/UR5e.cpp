@@ -46,14 +46,14 @@ UR5e::UR5e (ros::NodeHandle& nodeHandle) {
 
     // Add collisions
     ros::Duration(2).sleep();
-    // float z_board;
-    // nodeHandle.getParam("/robosoft/z", z_board);
-    // std::vector<moveit_msgs::CollisionObject> collision_objects;
-    // collision_objects.push_back(addBox("table", 1,2,0.35,0.3,0,0));
-    // collision_objects.push_back(addBox("board", 0.53,1.27,z_board+0.01,0.55,0,0));
-    // planning_scene_interface_.addCollisionObjects(collision_objects);
-    // std::cout << "Added collision" << std::endl;
-    // std::cout << "Robot is ready!" << std::endl;
+    float z_board;
+    nodeHandle.getParam("/robosoft/z", z_board);
+    std::vector<moveit_msgs::CollisionObject> collision_objects;
+    collision_objects.push_back(addBox("board", 2,2,z_board+0.01,-1,0,0));
+    collision_objects.push_back(addBox("wall", 2,0.2,2,-1,0.8,0));
+    planning_scene_interface_.addCollisionObjects(collision_objects);
+    std::cout << "Added collision" << std::endl;
+    std::cout << "Robot is ready!" << std::endl;
 }
 
 void UR5e::control() {
@@ -283,7 +283,7 @@ bool UR5e::closeGripperCallback(robosoft::closeGripper::Request &req, robosoft::
 moveit_msgs::CollisionObject UR5e::addBox(const char* name, float box_x, float box_y, float box_z, float x, float y, float z) {
   moveit_msgs::CollisionObject collision_object;
 
-  collision_object.header.frame_id = "world";
+  collision_object.header.frame_id = "base_link";
   collision_object.id = name;
 
   shape_msgs::SolidPrimitive primitive;
