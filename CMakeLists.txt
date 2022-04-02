@@ -19,7 +19,7 @@ find_package(yaml-cpp REQUIRED)
 
 add_service_files(FILES
     cartesianPath.srv
-    closeGripper.srv
+    grasp.srv
     jointGoal.srv
     poseGoal.srv
     positionGoal.srv

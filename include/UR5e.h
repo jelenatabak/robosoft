@@ -26,7 +26,7 @@
 #include <robosoft/poseGoal.h>
 #include <robosoft/cartesianPath.h>
 #include <robosoft/positionGoal.h>
-#include <robosoft/closeGripper.h>
+#include <robosoft/grasp.h>
 
 #include <dynamixel_workbench_msgs/DynamixelCommand.h>
 
@@ -38,8 +38,8 @@ class UR5e {
     bool planCartesianPathCallback(robosoft::cartesianPath::Request &req, robosoft::cartesianPath::Response &res);
     bool goToPositionCallback(robosoft::positionGoal::Request &req, robosoft::positionGoal::Response &res);
     bool pourCallback(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res);
-    bool openGripperCallback(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res);
-    bool closeGripperCallback(robosoft::closeGripper::Request &req, robosoft::closeGripper::Response &res);
+    bool openGripperCallback(robosoft::grasp::Request &req, robosoft::grasp::Response &res);
+    bool closeGripperCallback(robosoft::grasp::Request &req, robosoft::grasp::Response &res);
 
     moveit_msgs::CollisionObject addBox(const char* name, float box_x, float box_y, float box_z, float x, float y, float z);
     void attachObject(float obj_r, float obj_z);
@@ -64,6 +64,7 @@ class UR5e {
     ros::ServiceServer closeGripperSrv_;
 
     ros::ServiceClient dynamixelCommandClient_;
+    ros::ServiceClient dynamixelCommandWaitClient_;
     ros::ServiceClient missionDoneClient_;
     std_srvs::Trigger trigger;
 
@@ -77,7 +78,8 @@ class UR5e {
     geometry_msgs::Pose poseReference_;
     std::vector<geometry_msgs::Pose> posesReference_;
     geometry_msgs::Point positionReference_;
-    bool parallel_, perpendicular_, perpendicular_rotate_, graspMove_;
+    bool parallel_, perpendicular_, perpendicular_rotate_, constraint_;
+    double move_;
 
     std::string planning_group_;
     std::shared_ptr <moveit::planning_interface::MoveGroupInterface> move_group_;

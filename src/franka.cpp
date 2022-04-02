@@ -9,12 +9,13 @@ UR5e::UR5e (ros::NodeHandle& nodeHandle) {
     pour_ = false;
     open_ = false;
     close_ = false;
+    constraint_ = false;
 
     velocity_scale_ = 1;
     acceleration_scale_ = 1;
 
-    openPosition_ = 1300;
-    closedPosition_ = 200;
+    openPosition_ = 3000;
+    closedPosition_ = 4100;
 
     dynamixelCommand_.request.id = 1;
     dynamixelCommand_.request.addr_name = "Goal_Position";
@@ -36,6 +37,7 @@ UR5e::UR5e (ros::NodeHandle& nodeHandle) {
         &UR5e::closeGripperCallback, this);
 
     dynamixelCommandClient_ = nodeHandle.serviceClient<dynamixel_workbench_msgs::DynamixelCommand>("/dynamixel_workbench/dynamixel_command");
+    dynamixelCommandWaitClient_ = nodeHandle.serviceClient<dynamixel_workbench_msgs::DynamixelCommand>("/dynamixel_workbench/dynamixel_command_wait");
     missionDoneClient_ = nodeHandle.serviceClient<std_srvs::Trigger>("/mission_done");
 
     nodeHandle.getParam("/robosoft/planning_group", planning_group_);
@@ -175,6 +177,25 @@ void UR5e::goToPosition() {
 
         if(parallel_) 
         {
+            if(constraint_) {
+                constraint_ = false;
+                moveit_msgs::OrientationConstraint ocm;
+                ocm.link_name = "panda_link8";
+                ocm.header.frame_id = "panda_link0";
+                ocm.orientation.x = -0.5;
+                ocm.orientation.y = 0.5;
+                ocm.orientation.z = -0.5;
+                ocm.orientation.w = 0.5;
+                ocm.absolute_x_axis_tolerance = 0.3;
+                ocm.absolute_y_axis_tolerance = 3.14;
+                ocm.absolute_z_axis_tolerance = 0.3;
+                ocm.weight = 1.0;
+
+                moveit_msgs::Constraints test_constraints;
+                test_constraints.orientation_constraints.push_back(ocm);
+                move_group_->setPathConstraints(test_constraints);
+
+            }
             poseRef.orientation.x = -0.5;
             poseRef.orientation.y = 0.5;
             poseRef.orientation.z = -0.5;
@@ -197,6 +218,7 @@ void UR5e::goToPosition() {
         std::cout << "Done" << std::endl;
 
         position_ = false;
+        move_group_->clearPathConstraints();
     } catch (const std::runtime_error& e) {
         std::cout << "Runtime error. Aborting trajectory." << std::endl;
     }
@@ -204,7 +226,29 @@ void UR5e::goToPosition() {
 
 void UR5e::pour() {
     std::cout << "Pouring whiskey" << std::endl;
-    std::cout << "Not implemented" << std::endl;
+
+    std::vector<double> jointTarget = move_group_->getCurrentJointValues();
+    jointTarget.back() -= 1;
+
+    try {
+        move_group_->clearPoseTargets();
+        move_group_->setMaxVelocityScalingFactor(velocity_scale_);
+        move_group_->setStartStateToCurrentState();
+        moveit::planning_interface::MoveGroupInterface::Plan my_plan;
+        moveit_msgs::MoveItErrorCodes errorCode;
+
+        move_group_->setJointValueTarget(jointTarget);
+        bool success = (move_group_->plan(my_plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+        errorCode = move_group_->move();
+        std::cout << "Done" << std::endl;
+
+        if (errorCode.val < 0) {
+            throw std::runtime_error("Did not move!");
+        }
+
+    } catch (const std::runtime_error& e) {
+        std::cout << "Runtime error. Aborting trajectory." << std::endl;
+    }
 
     pour_ = false;
 }
@@ -212,20 +256,11 @@ void UR5e::pour() {
 void UR5e::openGripper() {
     std::cout << "Opening gripper" << std::endl;
     dynamixelCommand_.request.value = openPosition_;
-    dynamixelCommandClient_.call(dynamixelCommand_);
 
-    ros::Duration(2).sleep();
-    open_ = false;
-}
-
-void UR5e::closeGripper() {
-    std::cout << "Closing gripper" << std::endl;
-    dynamixelCommand_.request.value = closedPosition_;
-    dynamixelCommandClient_.call(dynamixelCommand_);
-
-    if (graspMove_) {
+    if (move_ != 0) {
+        dynamixelCommandWaitClient_.call(dynamixelCommand_);
         geometry_msgs::PoseStamped current = move_group_->getCurrentPose();
-        current.pose.position.x += 0.05;
+        current.pose.position.x += move_;
         move_group_->clearPoseTargets();
         move_group_->setStartStateToCurrentState();
         move_group_->setPoseTarget(current.pose);
@@ -233,8 +268,29 @@ void UR5e::closeGripper() {
         std::cout << "Done" << std::endl;
     }
 
-    ros::Duration(2).sleep();
+    dynamixelCommandClient_.call(dynamixelCommand_);
+    open_ = false;
+    move_ = 0;
+}
+
+void UR5e::closeGripper() {
+    std::cout << "Closing gripper" << std::endl;
+    dynamixelCommand_.request.value = closedPosition_;
+
+    if (move_ != 0) {
+        dynamixelCommandWaitClient_.call(dynamixelCommand_);
+        geometry_msgs::PoseStamped current = move_group_->getCurrentPose();
+        current.pose.position.x += move_;
+        move_group_->clearPoseTargets();
+        move_group_->setStartStateToCurrentState();
+        move_group_->setPoseTarget(current.pose);
+        move_group_->move();
+        std::cout << "Done" << std::endl;
+    }
+
+    dynamixelCommandClient_.call(dynamixelCommand_);
     close_ = false;
+    move_ = 0;
 }
 
 bool UR5e::goToJointGoalCallback(robosoft::jointGoal::Request &req, robosoft::jointGoal::Response &res){
@@ -261,6 +317,7 @@ bool UR5e::goToPositionCallback(robosoft::positionGoal::Request &req, robosoft::
     parallel_ = req.parallel;
     perpendicular_ = req.perpendicular;
     perpendicular_rotate_ = req.perpendicular_rotate;
+    constraint_ = req.constraint;
     return true;
 }
 
@@ -269,14 +326,15 @@ bool UR5e::pourCallback(std_srvs::Trigger::Request &req, std_srvs::Trigger::Resp
     return true;
 }
 
-bool UR5e::openGripperCallback(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res){
+bool UR5e::openGripperCallback(robosoft::grasp::Request &req, robosoft::grasp::Response &res){
     open_ = true;
+    move_ = req.move;
     return true;
 }
 
-bool UR5e::closeGripperCallback(robosoft::closeGripper::Request &req, robosoft::closeGripper::Response &res){
+bool UR5e::closeGripperCallback(robosoft::grasp::Request &req, robosoft::grasp::Response &res){
     close_ = true;
-    graspMove_ = req.move;
+    move_ = req.move;
     return true;
 }
 
@@ -334,7 +392,7 @@ int main(int argc, char** argv)
 {
     ros::init(argc, argv, "UR5e");
     ros::NodeHandle nodeHandle;
-    ros::AsyncSpinner spinner(1);
+    ros::AsyncSpinner spinner(0);
     spinner.start();
     UR5e robot = UR5e(nodeHandle);
     robot.control();
