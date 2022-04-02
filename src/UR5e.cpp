@@ -47,36 +47,46 @@ UR5e::UR5e (ros::NodeHandle& nodeHandle) {
     std::cout << "End effector link: " << move_group_->getEndEffectorLink() << std::endl;
 
     // Add collisions
-    std::vector<moveit_msgs::CollisionObject> collision_objects;
-    collision_objects.push_back(addBox("table", 1,2,0.35,0.3,0,0));
-    planning_scene_interface_.addCollisionObjects(collision_objects);
-    std::cout << "Added collision" << std::endl;
-
-    std::cout << "Robot is ready!" << std::endl;
+    ros::Duration(2).sleep();
+    // float z_board;
+    // nodeHandle.getParam("/robosoft/z", z_board);
+    // std::vector<moveit_msgs::CollisionObject> collision_objects;
+    // collision_objects.push_back(addBox("table", 1,2,0.35,0.3,0,0));
+    // collision_objects.push_back(addBox("board", 0.53,1.27,z_board+0.01,0.55,0,0));
+    // planning_scene_interface_.addCollisionObjects(collision_objects);
+    // std::cout << "Added collision" << std::endl;
+    // std::cout << "Robot is ready!" << std::endl;
 }
 
 void UR5e::control() {
     while (ros::ok()) {
         if (joint_) {
             goToJointGoal();
+            missionDoneClient_.call(trigger);
         }
         else if (pose_){
             goToPoseGoal();
+            missionDoneClient_.call(trigger);
         }
         else if (path_){
             planCartesianPath();
+            missionDoneClient_.call(trigger);
         }
         else if (position_){
             goToPosition();
+            missionDoneClient_.call(trigger);
         }
         else if (pour_){
             pour();
+            missionDoneClient_.call(trigger);
         }
         else if (open_){
             openGripper();
+            missionDoneClient_.call(trigger);
         }
         else if (close_){
             closeGripper();
+            missionDoneClient_.call(trigger);
         }
     }
 }
@@ -84,6 +94,7 @@ void UR5e::control() {
 void UR5e::goToJointGoal() {
     std::cout << "Moving to joint state" << std::endl;
     try {
+        move_group_->clearPoseTargets();
         move_group_->setMaxVelocityScalingFactor(velocity_scale_);
         move_group_->setStartStateToCurrentState();
         moveit::planning_interface::MoveGroupInterface::Plan my_plan;
@@ -99,7 +110,6 @@ void UR5e::goToJointGoal() {
         }
 
         joint_ = false;
-        missionDoneClient_.call(trigger);
 
 
     } catch (const std::runtime_error& e) {
@@ -110,13 +120,14 @@ void UR5e::goToJointGoal() {
 void UR5e::goToPoseGoal() {
     std::cout << "Moving to pose goal" << std::endl;
     try{
+        move_group_->clearPoseTargets();
         move_group_->setMaxVelocityScalingFactor(velocity_scale_);
         move_group_->setStartStateToCurrentState();
         move_group_->setPoseTarget(poseReference_);
         move_group_->move();
+        std::cout << "Done" << std::endl;
 
         pose_ = false;
-        missionDoneClient_.call(trigger);
 
     } catch (const std::runtime_error& e) {
         std::cout << "Runtime error. Aborting trajectory." << std::endl;
@@ -126,26 +137,25 @@ void UR5e::goToPoseGoal() {
 void UR5e::planCartesianPath() {
     std::cout << "Planning cartesian path" << std::endl;
     try{
+        move_group_->clearPoseTargets();
         moveit_msgs::RobotTrajectory trajectory;
         moveit_msgs::RobotTrajectory trajectory_slow;
 
         const double jump_threshold = 5;
         const double eef_step = 0.5;
         double fraction = move_group_->computeCartesianPath(posesReference_, eef_step, jump_threshold, trajectory);
-
         trajectory_processing::IterativeParabolicTimeParameterization iptp(100, 0.05);
         robot_trajectory::RobotTrajectory r_trajec(move_group_->getRobotModel(), planning_group_);
         r_trajec.setRobotTrajectoryMsg(*move_group_->getCurrentState(), trajectory);
         iptp.computeTimeStamps(r_trajec, velocity_scale_, acceleration_scale_);
         r_trajec.getRobotTrajectoryMsg(trajectory_slow);
-
         moveit::planning_interface::MoveGroupInterface::Plan plan;
         plan.trajectory_ = trajectory_slow;
         move_group_->setStartStateToCurrentState();
         move_group_->execute(plan);
+        std::cout << "Done" << std::endl;
 
         path_ = false;
-        missionDoneClient_.call(trigger);
 
     } catch (const std::runtime_error& e) {
         std::cout << "Runtime error. Aborting trajectory." << std::endl;
@@ -155,6 +165,7 @@ void UR5e::planCartesianPath() {
 void UR5e::goToPosition() {
     std::cout << "Moving to position goal" << std::endl;
     try{
+        move_group_->clearPoseTargets();
         move_group_->setStartStateToCurrentState();
 
         geometry_msgs::Pose poseRef;
@@ -162,6 +173,7 @@ void UR5e::goToPosition() {
 
         if(parallel_) 
         {
+<<<<<<< HEAD
             if(constraint_) {
                 constraint_ = false;
                 moveit_msgs::OrientationConstraint ocm;
@@ -183,21 +195,32 @@ void UR5e::goToPosition() {
             }
             poseRef.orientation.x = 0;
             poseRef.orientation.y = 0.7071068;
+=======
+            poseRef.orientation.x = -0.7071068;
+            poseRef.orientation.y = 0;
+>>>>>>> 57a474ed459f2a15473722fed820a43819bae3ef
             poseRef.orientation.z = 0;
             poseRef.orientation.w = 0.7071068;
+
         } 
-        else if (perpendicular_) 
-        {
-            poseRef.orientation.x = 0.7071068;
-            poseRef.orientation.y = 0.7071068;
+        else if (perpendicular_) {
+            poseRef.orientation.x = 1;
+            poseRef.orientation.y = 0;
             poseRef.orientation.z = 0;
             poseRef.orientation.w = 0;
         }
-        move_group_->setPoseTarget(poseReference_);
+
+        else if (perpendicular_rotate_) {
+            poseRef.orientation.x = 0;
+            poseRef.orientation.y = 1;
+            poseRef.orientation.z = 0;
+            poseRef.orientation.w = 0;  
+        }
+        move_group_->setPoseTarget(poseRef);
         move_group_->move();
+        std::cout << "Done" << std::endl;
 
         position_ = false;
-        missionDoneClient_.call(trigger);
 
     } catch (const std::runtime_error& e) {
         std::cout << "Runtime error. Aborting trajectory." << std::endl;
@@ -206,6 +229,7 @@ void UR5e::goToPosition() {
 
 void UR5e::pour() {
     std::cout << "Pouring whiskey" << std::endl;
+<<<<<<< HEAD
 
     std::vector<double> jointTarget = move_group_->getCurrentJointValues();
     jointTarget.back() -= 1;
@@ -229,6 +253,9 @@ void UR5e::pour() {
     } catch (const std::runtime_error& e) {
         std::cout << "Runtime error. Aborting trajectory." << std::endl;
     }
+=======
+    std::cout << "Not implemented" << std::endl;
+>>>>>>> 57a474ed459f2a15473722fed820a43819bae3ef
 
     pour_ = false;
 }
@@ -249,8 +276,14 @@ void UR5e::openGripper() {
     }
 
     dynamixelCommandClient_.call(dynamixelCommand_);
+<<<<<<< HEAD
     open_ = false;
     move_ = 0;
+=======
+
+    ros::Duration(2).sleep();
+    open_ = false;
+>>>>>>> 57a474ed459f2a15473722fed820a43819bae3ef
 }
 
 void UR5e::closeGripper() {
@@ -269,8 +302,24 @@ void UR5e::closeGripper() {
     }
 
     dynamixelCommandClient_.call(dynamixelCommand_);
+<<<<<<< HEAD
     close_ = false;
     move_ = 0;
+=======
+
+    if (graspMove_) {
+        geometry_msgs::PoseStamped current = move_group_->getCurrentPose();
+        current.pose.position.x += 0.05;
+        move_group_->clearPoseTargets();
+        move_group_->setStartStateToCurrentState();
+        move_group_->setPoseTarget(current.pose);
+        move_group_->move();
+        std::cout << "Done" << std::endl;
+    }
+
+    ros::Duration(2).sleep();
+    close_ = false;
+>>>>>>> 57a474ed459f2a15473722fed820a43819bae3ef
 }
 
 bool UR5e::goToJointGoalCallback(robosoft::jointGoal::Request &req, robosoft::jointGoal::Response &res){
@@ -296,7 +345,11 @@ bool UR5e::goToPositionCallback(robosoft::positionGoal::Request &req, robosoft::
     positionReference_ = req.position;
     parallel_ = req.parallel;
     perpendicular_ = req.perpendicular;
+<<<<<<< HEAD
     constraint_ = req.constraint;
+=======
+    perpendicular_rotate_ = req.perpendicular_rotate;
+>>>>>>> 57a474ed459f2a15473722fed820a43819bae3ef
     return true;
 }
 
