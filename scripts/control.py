@@ -59,9 +59,9 @@ class Robosoft(object):
         self.go_to_position_goal_client = rospy.ServiceProxy(
             'go_to_position_goal', positionGoal)
         self.pour_client = rospy.ServiceProxy('pour', Trigger)
-        self.open_gripper_client = rospy.ServiceProxy('open_gripper', Trigger)
+        self.open_gripper_client = rospy.ServiceProxy('open_gripper', grasp)
         self.close_gripper_client = rospy.ServiceProxy(
-            'close_gripper', closeGripper)
+            'close_gripper', grasp)
 
         self.test_publisher = rospy.Publisher(
             'test_pc', PointCloud2, queue_size=10)
@@ -609,9 +609,150 @@ class Robosoft(object):
 
     def task3(self):
         A_ind, B_ind = self.get_positions(1, 2)
-        # 2 stvari u B, višu staviti na nižu, parallel
 
-        # uzeti bocu u A parallel
+        if self.get_max(self.pts_B[B_ind[0]], 'z') > self.get_max(self.pts_B[B_ind[1]], 'z'):
+            glass_pc = self.pts_B[B_ind[0]]
+            print("Glass: " + str(B_ind[0]))
+            coaster_pc = self.pts_B[B_ind[1]]
+        else:
+            glass_pc = self.pts_B[B_ind[1]]
+            print("Glass: " + str (B_ind[1]))
+            coaster_pc = self.pts_B[B_ind[0]]
+        
+        req = positionGoalRequest()
+        req.parallel = True
+        req.perpendicular = False
+        req.perpendicular_rotate = False
+        req.constraint = False
+
+        whiskey_pc = self.pts_A[A_ind[0]]
+        centroid_pt = self.get_centroid(whiskey_pc)
+        dimensions = self.get_dimensions(whiskey_pc)
+
+        approach_pt = copy.deepcopy(centroid_pt)
+        approach_pt.x -= 0.4
+        req.position = approach_pt
+        self.go_to_position_goal_client.call(req)
+        self.check_mission_done()
+        print("Moved to approach pose")
+
+        grasp_pt = copy.deepcopy(centroid_pt)
+        grasp_pt.x -= 0.2
+        grasp_pt.z = self.z + 0.1
+        req.position = grasp_pt
+        self.go_to_position_goal_client.call(req)
+        self.check_mission_done()
+        print("Moved to grasp pose")
+
+        req_gripper = graspRequest()
+        req_gripper.move = 0.03   
+        self.close_gripper_client.call(req_gripper)
+        self.check_mission_done()
+        print("Object grasped")
+
+        up_pt = copy.deepcopy(grasp_pt)
+        up_pt.z += 0.1
+        req.position = up_pt
+        self.go_to_position_goal_client.call(req)
+        self.check_mission_done()
+        print("Moved above bottle")
+
+        glass_centroid = self.get_centroid(glass_pc)
+        glass_up_pt = copy.deepcopy(glass_centroid)
+        glass_up_pt.z = self.z + 0.08 + 0.1
+        glass_up_pt.x -= 0.18
+        glass_up_pt.y -= 0.18
+        req.position = glass_up_pt
+        req.constraint = True
+        self.go_to_position_goal_client.call(req)
+        self.check_mission_done()
+        print("Moved above glass")
+
+        self.pour_client.call() # num deg?
+        self.check_mission_done()
+        print("Poured whiskey!")
+
+        # # move to normal rotation
+        # # self.pour_client.call() # num deg?
+        # # self.check_mission_done()
+        # # print("Poured whiskey!")
+
+        req.position = up_pt
+        req.constraint = False
+        self.go_to_position_goal_client.call(req)
+        self.check_mission_done()
+        print("Moved above bottle")
+
+        req.position = grasp_pt
+        self.go_to_position_goal_client.call(req)
+        self.check_mission_done()
+        print("Moved to release pose")
+
+        req_gripper.move = -0.03 
+        self.open_gripper_client.call(req_gripper)
+        self.check_mission_done()
+        print("Gripper open")
+
+        req.position = approach_pt
+        self.go_to_position_goal_client.call(req)
+        self.check_mission_done()
+        print("Moved to approach pose")
+
+
+
+
+        # # casu na coaster
+        # approach_pt = copy.deepcopy(glass_centroid)
+        # approach_pt.x -= 0.4
+        # req.position = approach_pt
+        # self.go_to_position_goal_client.call(req)
+        # self.check_mission_done()
+        # print("Moved to glass approach pose")
+
+        # glass_pt = copy.deepcopy(glass_centroid)
+        # req.position = glass_pt
+        # req.position.z = self.z + 0.04
+        # self.go_to_position_goal_client.call(req)
+        # self.check_mission_done()
+        # print("Moved to glass")
+
+        # req_gripper = closeGripperRequest()
+        # req_gripper.move = True   
+        # self.close_gripper_client.call(req_gripper)
+        # self.check_mission_done()
+        # print("Object grasped")
+
+        # up_pt = copy.deepcopy(glass_pt)
+        # up_pt.z += 0.1
+        # req.position = up_pt
+        # self.go_to_position_goal_client.call(req)
+        # self.check_mission_done()
+        # print("Moved above glass")
+
+        # coaster_centroid = self.get_centroid(coaster_pc)
+        # up_pt = copy.deepcopy(coaster_centroid)
+        # up_pt.z += 0.1
+        # req.position = up_pt
+        # self.go_to_position_goal_client.call(req)
+        # self.check_mission_done()
+        # print("Moved above coaster")
+
+        # place_pt = copy.deepcopy(coaster_centroid)
+        # place_pt.z = self.z + 0.04
+        # req.position = place_pt
+        # self.go_to_position_goal_client.call(req)
+        # self.check_mission_done()
+        # print("Ready to release glass")
+
+        # self.open_gripper_client.call()
+        # self.check_mission_done()
+        # print("Gripper open")
+
+        # req.position = place_pt
+        # place_pt.x -= 0.4
+        # self.go_to_position_goal_client.call(req)
+        # self.check_mission_done()
+        # print("Moved to approach pose")
 
     def go_home(self):
         joint_goal = self.read_vector_from_yaml(
@@ -629,12 +770,15 @@ def main():
         task = myargv[1]
         rospy.init_node('robosoft_control')
         robosoft = Robosoft()
-        robosoft.open_gripper_client.call()
+        req_gripper = graspRequest()
+        req_gripper.move = 0
+        robosoft.open_gripper_client.call(req_gripper)
         robosoft.check_mission_done()
         print("Gripper open")
 
+
         joint_goals = robosoft.read_vectors_from_yaml(
-            'franka_record_A_joints_list.yaml')
+            'franka_record.yaml')
         robosoft.record(joint_goals)
         robosoft.franka_count_pts()
         print("Done with recording")
