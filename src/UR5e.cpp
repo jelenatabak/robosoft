@@ -173,7 +173,6 @@ void UR5e::goToPosition() {
 
         if(parallel_) 
         {
-<<<<<<< HEAD
             if(constraint_) {
                 constraint_ = false;
                 moveit_msgs::OrientationConstraint ocm;
@@ -195,10 +194,6 @@ void UR5e::goToPosition() {
             }
             poseRef.orientation.x = 0;
             poseRef.orientation.y = 0.7071068;
-=======
-            poseRef.orientation.x = -0.7071068;
-            poseRef.orientation.y = 0;
->>>>>>> 57a474ed459f2a15473722fed820a43819bae3ef
             poseRef.orientation.z = 0;
             poseRef.orientation.w = 0.7071068;
 
@@ -229,7 +224,6 @@ void UR5e::goToPosition() {
 
 void UR5e::pour() {
     std::cout << "Pouring whiskey" << std::endl;
-<<<<<<< HEAD
 
     std::vector<double> jointTarget = move_group_->getCurrentJointValues();
     jointTarget.back() -= 1;
@@ -253,9 +247,6 @@ void UR5e::pour() {
     } catch (const std::runtime_error& e) {
         std::cout << "Runtime error. Aborting trajectory." << std::endl;
     }
-=======
-    std::cout << "Not implemented" << std::endl;
->>>>>>> 57a474ed459f2a15473722fed820a43819bae3ef
 
     pour_ = false;
 }
@@ -276,14 +267,8 @@ void UR5e::openGripper() {
     }
 
     dynamixelCommandClient_.call(dynamixelCommand_);
-<<<<<<< HEAD
     open_ = false;
     move_ = 0;
-=======
-
-    ros::Duration(2).sleep();
-    open_ = false;
->>>>>>> 57a474ed459f2a15473722fed820a43819bae3ef
 }
 
 void UR5e::closeGripper() {
@@ -302,24 +287,8 @@ void UR5e::closeGripper() {
     }
 
     dynamixelCommandClient_.call(dynamixelCommand_);
-<<<<<<< HEAD
     close_ = false;
     move_ = 0;
-=======
-
-    if (graspMove_) {
-        geometry_msgs::PoseStamped current = move_group_->getCurrentPose();
-        current.pose.position.x += 0.05;
-        move_group_->clearPoseTargets();
-        move_group_->setStartStateToCurrentState();
-        move_group_->setPoseTarget(current.pose);
-        move_group_->move();
-        std::cout << "Done" << std::endl;
-    }
-
-    ros::Duration(2).sleep();
-    close_ = false;
->>>>>>> 57a474ed459f2a15473722fed820a43819bae3ef
 }
 
 bool UR5e::goToJointGoalCallback(robosoft::jointGoal::Request &req, robosoft::jointGoal::Response &res){
@@ -345,11 +314,8 @@ bool UR5e::goToPositionCallback(robosoft::positionGoal::Request &req, robosoft::
     positionReference_ = req.position;
     parallel_ = req.parallel;
     perpendicular_ = req.perpendicular;
-<<<<<<< HEAD
     constraint_ = req.constraint;
-=======
     perpendicular_rotate_ = req.perpendicular_rotate;
->>>>>>> 57a474ed459f2a15473722fed820a43819bae3ef
     return true;
 }
 
