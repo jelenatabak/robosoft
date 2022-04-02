@@ -22,17 +22,12 @@ class Robosoft(object):
         self.y1 = rospy.get_param('/robosoft/y1')
         self.y2 = rospy.get_param('/robosoft/y2')
 
-        self.y3 = rospy.get_param('/robosoft/y3')
-        self.y4 = rospy.get_param('/robosoft/y4')
-        self.y5 = rospy.get_param('/robosoft/y5')
-        self.y6 = rospy.get_param('/robosoft/y6')
-
         self.x1 = rospy.get_param('/robosoft/x1')
         self.x2 = rospy.get_param('/robosoft/x2')
-        # self.x3 = rospy.get_param('/robosoft/x3')
-        # self.x4 = rospy.get_param('/robosoft/x4')
-        # self.x5 = rospy.get_param('/robosoft/x5')
-        # self.x6 = rospy.get_param('/robosoft/x6')
+        self.x3 = rospy.get_param('/robosoft/x3')
+        self.x4 = rospy.get_param('/robosoft/x4')
+        self.x5 = rospy.get_param('/robosoft/x5')
+        self.x6 = rospy.get_param('/robosoft/x6')
 
         self.base_frame = rospy.get_param('/robosoft/base_frame')
         self.camera_frame = rospy.get_param('/robosoft/camera_frame')
@@ -147,55 +142,7 @@ class Robosoft(object):
 
         return poses_goal
 
-    def ur_count_pts_B(self):
-        z_values = self.points['z']
-
-        mask = ~np.isnan(z_values) * (z_values > self.z)
-        pts_z = self.points[mask]
-        x_values = pts_z['x']
-        y_values = pts_z['y']
-
-        mask = (x_values > self.x1-self.r) * (x_values < self.x1+self.r) * \
-            (y_values > self.y1-self.r) * (y_values < self.y1+self.r)
-        self.B1 = pts_z[mask]
-        self.pts_B_count.append(len(pts_z[mask]))
-        self.pts_B.append(pts_z[mask])
-
-        mask = (x_values > self.x2-self.r) * (x_values < self.x2+self.r) * \
-            (y_values > self.y1-self.r) * (y_values < self.y1+self.r)
-        self.B2 = pts_z[mask]
-        self.pts_B_count.append(len(pts_z[mask]))
-        self.pts_B.append(pts_z[mask])
-
-        mask = (x_values > self.x3-self.r) * (x_values < self.x3+self.r) * \
-            (y_values > self.y1-self.r) * (y_values < self.y1+self.r)
-        self.B3 = pts_z[mask]
-        self.pts_B_count.append(len(pts_z[mask]))
-        self.pts_B.append(pts_z[mask])
-
-        mask = (x_values > self.x1-self.r) * (x_values < self.x1+self.r) * \
-            (y_values > self.y2-self.r) * (y_values < self.y2+self.r)
-        self.B4 = pts_z[mask]
-        self.pts_B_count.append(len(pts_z[mask]))
-        self.pts_B.append(pts_z[mask])
-
-        mask = (x_values > self.x2-self.r) * (x_values < self.x2+self.r) * \
-            (y_values > self.y2-self.r) * (y_values < self.y2+self.r)
-        self.B5 = pts_z[mask]
-        self.pts_B_count.append(len(pts_z[mask]))
-        self.pts_B.append(pts_z[mask])
-
-        mask = (x_values > self.x3-self.r) * (x_values < self.x3+self.r) * \
-            (y_values > self.y2-self.r) * (y_values < self.y2+self.r)
-        self.B6 = pts_z[mask]
-        self.pts_B_count.append(len(pts_z[mask]))
-        self.pts_B.append(pts_z[mask])
-
-        print('Done with pc filtering')
-        print('Pts count: ')
-        print(self.pts_B_count)
-
-    def ur_count_pts_A(self):
+    def ur_count_pts(self):
         z_values = self.points['z']
 
         mask = ~np.isnan(z_values) * (z_values > self.z)
@@ -205,42 +152,68 @@ class Robosoft(object):
 
         mask = (x_values > self.x4-self.r) * (x_values < self.x4+self.r) * \
             (y_values > self.y1-self.r) * (y_values < self.y1+self.r)
-        self.A1 = pts_z[mask]
-        self.pts_A_count.append(len(pts_z[mask]))
+        self.pts_A_count[0] += (len(pts_z[mask]))
         self.pts_A.append(pts_z[mask])
 
         mask = (x_values > self.x5-self.r) * (x_values < self.x5+self.r) * \
             (y_values > self.y1-self.r) * (y_values < self.y1+self.r)
-        self.A2 = pts_z[mask]
-        self.pts_A_count.append(len(pts_z[mask]))
+        self.pts_A_count[1] += (len(pts_z[mask]))
         self.pts_A.append(pts_z[mask])
 
         mask = (x_values > self.x6-self.r) * (x_values < self.x6+self.r) * \
             (y_values > self.y1-self.r) * (y_values < self.y1+self.r)
-        self.A3 = pts_z[mask]
-        self.pts_A_count.append(len(pts_z[mask]))
+        self.pts_A_count[2] += (len(pts_z[mask]))
         self.pts_A.append(pts_z[mask])
 
         mask = (x_values > self.x4-self.r) * (x_values < self.x4+self.r) * \
             (y_values > self.y2-self.r) * (y_values < self.y2+self.r)
-        self.A4 = pts_z[mask]
-        self.pts_A_count.append(len(pts_z[mask]))
+        self.pts_A_count[3] += (len(pts_z[mask]))
         self.pts_A.append(pts_z[mask])
 
         mask = (x_values > self.x5-self.r) * (x_values < self.x5+self.r) * \
             (y_values > self.y2-self.r) * (y_values < self.y2+self.r)
-        self.A5 = pts_z[mask]
-        self.pts_A_count.append(len(pts_z[mask]))
+        self.pts_A_count[4] += (len(pts_z[mask]))
         self.pts_A.append(pts_z[mask])
 
         mask = (x_values > self.x6-self.r) * (x_values < self.x6+self.r) * \
             (y_values > self.y2-self.r) * (y_values < self.y2+self.r)
-        self.A6 = pts_z[mask]
-        self.pts_A_count.append(len(pts_z[mask]))
+        self.pts_A_count[5] += (len(pts_z[mask]))
         self.pts_A.append(pts_z[mask])
 
+        mask = (x_values > self.x1-self.r) * (x_values < self.x1+self.r) * \
+            (y_values > self.y1-self.r) * (y_values < self.y1+self.r)
+        self.pts_B_count[0] += (len(pts_z[mask]))
+        self.pts_B.append(pts_z[mask])
+
+        mask = (x_values > self.x2-self.r) * (x_values < self.x2+self.r) * \
+            (y_values > self.y1-self.r) * (y_values < self.y1+self.r)
+        self.pts_B_count[1] += (len(pts_z[mask]))
+        self.pts_B.append(pts_z[mask])
+
+        mask = (x_values > self.x3-self.r) * (x_values < self.x3+self.r) * \
+            (y_values > self.y1-self.r) * (y_values < self.y1+self.r)
+        self.pts_B_count[2] += (len(pts_z[mask]))
+        self.pts_B.append(pts_z[mask])
+
+        mask = (x_values > self.x1-self.r) * (x_values < self.x1+self.r) * \
+            (y_values > self.y2-self.r) * (y_values < self.y2+self.r)
+        self.pts_B_count[3] += (len(pts_z[mask]))
+        self.pts_B.append(pts_z[mask])
+
+        mask = (x_values > self.x2-self.r) * (x_values < self.x2+self.r) * \
+            (y_values > self.y2-self.r) * (y_values < self.y2+self.r)
+        self.pts_B_count[4] += (len(pts_z[mask]))
+        self.pts_B.append(pts_z[mask])
+
+        mask = (x_values > self.x3-self.r) * (x_values < self.x3+self.r) * \
+            (y_values > self.y2-self.r) * (y_values < self.y2+self.r)
+        self.pts_B_count[5] += (len(pts_z[mask]))
+        self.pts_B.append(pts_z[mask])
+
         print('Done with pc filtering')
-        print('Pts count: ', self.pts_A_count)
+        print('Pts A count: ', self.pts_A_count)
+        print('Pts B count: ', self.pts_B_count)
+
 
     def record(self, joint_goals):
         for i in range(len(joint_goals)):
@@ -267,77 +240,6 @@ class Robosoft(object):
 
         self.points = np.concatenate(self.points_list)
 
-    def franka_count_pts(self):
-        z_values = self.points['z']
-
-        mask = ~np.isnan(z_values) * (z_values > self.z)
-        pts_z = self.points[mask]
-        x_values = pts_z['x']
-        y_values = pts_z['y']
-
-        mask = (x_values > self.x1-self.r) * (x_values < self.x1+self.r) * \
-            (y_values > self.y4-self.r) * (y_values < self.y4+self.r)
-        self.pts_A_count[0] += (len(pts_z[mask]))
-        self.pts_A.append(pts_z[mask])
-
-        mask = (x_values > self.x1-self.r) * (x_values < self.x1+self.r) * \
-            (y_values > self.y5-self.r) * (y_values < self.y5+self.r)
-        self.pts_A_count[1] += (len(pts_z[mask]))
-        self.pts_A.append(pts_z[mask])
-
-        mask = (x_values > self.x1-self.r) * (x_values < self.x1+self.r) * \
-            (y_values > self.y6-self.r) * (y_values < self.y6+self.r)
-        self.pts_A_count[2] += (len(pts_z[mask]))
-        self.pts_A.append(pts_z[mask])
-
-        mask = (x_values > self.x2-self.r) * (x_values < self.x2+self.r) * \
-            (y_values > self.y4-self.r) * (y_values < self.y4+self.r)
-        self.pts_A_count[3] += (len(pts_z[mask]))
-        self.pts_A.append(pts_z[mask])
-
-        mask = (x_values > self.x2-self.r) * (x_values < self.x2+self.r) * \
-            (y_values > self.y5-self.r) * (y_values < self.y5+self.r)
-        self.pts_A_count[4] += (len(pts_z[mask]))
-        self.pts_A.append(pts_z[mask])
-
-        mask = (x_values > self.x2-self.r) * (x_values < self.x2+self.r) * \
-            (y_values > self.y6-self.r) * (y_values < self.y6+self.r)
-        self.pts_A_count[5] += (len(pts_z[mask]))
-        self.pts_A.append(pts_z[mask])
-
-        mask = (x_values > self.x1-self.r) * (x_values < self.x1+self.r) * \
-            (y_values > self.y1-self.r) * (y_values < self.y1+self.r)
-        self.pts_B_count[0] += (len(pts_z[mask]))
-        self.pts_B.append(pts_z[mask])
-
-        mask = (x_values > self.x1-self.r) * (x_values < self.x1+self.r) * \
-            (y_values > self.y2-self.r) * (y_values < self.y2+self.r)
-        self.pts_B_count[1] += (len(pts_z[mask]))
-        self.pts_B.append(pts_z[mask])
-
-        mask = (x_values > self.x1-self.r) * (x_values < self.x1+self.r) * \
-            (y_values > self.y3-self.r) * (y_values < self.y3+self.r)
-        self.pts_B_count[2] += (len(pts_z[mask]))
-        self.pts_B.append(pts_z[mask])
-
-        mask = (x_values > self.x2-self.r) * (x_values < self.x2+self.r) * \
-            (y_values > self.y1-self.r) * (y_values < self.y1+self.r)
-        self.pts_B_count[3] += (len(pts_z[mask]))
-        self.pts_B.append(pts_z[mask])
-
-        mask = (x_values > self.x2-self.r) * (x_values < self.x2+self.r) * \
-            (y_values > self.y2-self.r) * (y_values < self.y2+self.r)
-        self.pts_B_count[4] += (len(pts_z[mask]))
-        self.pts_B.append(pts_z[mask])
-
-        mask = (x_values > self.x2-self.r) * (x_values < self.x2+self.r) * \
-            (y_values > self.y3-self.r) * (y_values < self.y3+self.r)
-        self.pts_B_count[5] += (len(pts_z[mask]))
-        self.pts_B.append(pts_z[mask])
-
-        print('Done with pc filtering')
-        print('Pts A count: ', self.pts_A_count)
-        print('Pts B count: ', self.pts_B_count)
 
     def get_positions(self, A_num, B_num):
         A_ind = np.sort(np.argpartition(self.pts_A_count, -A_num)[-A_num:])
@@ -397,6 +299,7 @@ class Robosoft(object):
         min_x = 0.03  # grasp small objects with fingertip
 
         req = positionGoalRequest()
+        req_gripper = closeGripperRequest()
 
         if dimensions[2] > min_z and dimensions[1] < max_y:
             print("Grasping parallel")
@@ -406,15 +309,17 @@ class Robosoft(object):
             req.perpendicular_rotate = False
 
             approach_pt = copy.deepcopy(centroid_pt)
-            approach_pt.x -= 0.3
+            approach_pt.x -= 0.4
             grasp_pt = copy.deepcopy(centroid_pt)
             if dimensions[0] < min_x:
-                grasp_pt.x -= 0.19
+                grasp_pt.x -= 0.20
             else:
-                grasp_pt.x -= 0.16
+                grasp_pt.x -= 0.19
 
             up_pt = copy.deepcopy(grasp_pt)
             up_pt.z += 0.1
+
+            req_gripper.move = 0.03  
 
             ret_value = 1
 
@@ -426,12 +331,14 @@ class Robosoft(object):
             req.perpendicular_rotate = False
 
             approach_pt = copy.deepcopy(centroid_pt)
-            approach_pt.z -= 0.3
+            approach_pt.z -= 0.4
             grasp_pt = copy.deepcopy(centroid_pt)
-            grasp_pt.z -= 0.20
+            grasp_pt.z -= 0.3
 
             up_pt = copy.deepcopy(grasp_pt)
             up_pt.z += 0.1
+
+            req_gripper.move = 0
 
             ret_value = 2
 
@@ -444,12 +351,14 @@ class Robosoft(object):
             req.perpendicular_rotate = True
 
             approach_pt = copy.deepcopy(centroid_pt)
-            approach_pt.z -= 0.3
+            approach_pt.z -= 0.4
             grasp_pt = copy.deepcopy(centroid_pt)
-            grasp_pt.z -= 0.20
+            grasp_pt.z -= 0.3
 
             up_pt = copy.deepcopy(grasp_pt)
             up_pt.z += 0.1
+
+            req_gripper.move = 0
 
             ret_value = 3
 
@@ -462,9 +371,7 @@ class Robosoft(object):
         self.go_to_position_goal_client.call(req)
         self.check_mission_done()
         print("Moved to grasp pose")
-
-        req_gripper = closeGripperRequest()
-        req_gripper.move = False    # true if big obj?
+  
         self.close_gripper_client.call(req_gripper)
         self.check_mission_done()
         print("Object grasped")
@@ -495,6 +402,9 @@ class Robosoft(object):
         req.perpendicular = True
         req.perpendicular_rotate = False
 
+        req_gripper = closeGripperRequest()
+        req_gripper.move = 0
+
         for i in A_ind:
             pc = self.pts_A[i]
             grasp = self.grasp(pc)
@@ -512,7 +422,7 @@ class Robosoft(object):
             self.check_mission_done()
             print("Moved to place pose")
 
-            self.open_gripper_client.call()
+            self.open_gripper_client.call(req_gripper)
             self.check_mission_done()
             print("Object placed")
 
@@ -534,6 +444,8 @@ class Robosoft(object):
         req.perpendicular = False
         req.perpendicular_rotate = False
 
+        req_gripper = closeGripperRequest()
+
         for i in range(len(A_ind)):
             pot_i = A_ind[i]
             shelf_i = B_ind[i]
@@ -545,21 +457,21 @@ class Robosoft(object):
             dimensions = self.get_dimensions(pot_pc)
 
             approach_pt = copy.deepcopy(centroid_pt)
-            approach_pt.x -= 0.3
+            approach_pt.x -= 0.4
             req.position = approach_pt
             self.go_to_position_goal_client.call(req)
             self.check_mission_done()
             print("Moved to approach pose")
 
             grasp_pt = copy.deepcopy(centroid_pt)
-            grasp_pt.x -= 0.14
+            grasp_pt.x -= 0.2
             req.position = grasp_pt
             self.go_to_position_goal_client.call(req)
             self.check_mission_done()
             print("Moved to grasp pose")
 
             req_gripper = closeGripperRequest()
-            req_gripper.move = False    # true if big obj?
+            req_gripper.move = 0.03
             self.close_gripper_client.call(req_gripper)
             self.check_mission_done()
             print("Object grasped")
@@ -592,7 +504,8 @@ class Robosoft(object):
             self.check_mission_done()
             print("Moved to place pose")
 
-            self.open_gripper_client.call()
+            req_gripper.move = -0.03
+            self.open_gripper_client.call(req_gripper)
             self.check_mission_done()
             print("Object placed")
 
@@ -701,62 +614,62 @@ class Robosoft(object):
 
 
 
-        # # casu na coaster
-        # approach_pt = copy.deepcopy(glass_centroid)
-        # approach_pt.x -= 0.4
-        # req.position = approach_pt
-        # self.go_to_position_goal_client.call(req)
-        # self.check_mission_done()
-        # print("Moved to glass approach pose")
+        # casu na coaster
+        approach_pt = copy.deepcopy(glass_centroid)
+        approach_pt.x -= 0.4
+        req.position = approach_pt
+        self.go_to_position_goal_client.call(req)
+        self.check_mission_done()
+        print("Moved to glass approach pose")
 
-        # glass_pt = copy.deepcopy(glass_centroid)
-        # req.position = glass_pt
-        # req.position.z = self.z + 0.04
-        # self.go_to_position_goal_client.call(req)
-        # self.check_mission_done()
-        # print("Moved to glass")
+        glass_pt = copy.deepcopy(glass_centroid)
+        req.position = glass_pt
+        req.position.z = self.z + 0.04
+        self.go_to_position_goal_client.call(req)
+        self.check_mission_done()
+        print("Moved to glass")
 
-        # req_gripper = closeGripperRequest()
-        # req_gripper.move = True   
-        # self.close_gripper_client.call(req_gripper)
-        # self.check_mission_done()
-        # print("Object grasped")
+        req_gripper = closeGripperRequest()
+        req_gripper.move = True   
+        self.close_gripper_client.call(req_gripper)
+        self.check_mission_done()
+        print("Object grasped")
 
-        # up_pt = copy.deepcopy(glass_pt)
-        # up_pt.z += 0.1
-        # req.position = up_pt
-        # self.go_to_position_goal_client.call(req)
-        # self.check_mission_done()
-        # print("Moved above glass")
+        up_pt = copy.deepcopy(glass_pt)
+        up_pt.z += 0.1
+        req.position = up_pt
+        self.go_to_position_goal_client.call(req)
+        self.check_mission_done()
+        print("Moved above glass")
 
-        # coaster_centroid = self.get_centroid(coaster_pc)
-        # up_pt = copy.deepcopy(coaster_centroid)
-        # up_pt.z += 0.1
-        # req.position = up_pt
-        # self.go_to_position_goal_client.call(req)
-        # self.check_mission_done()
-        # print("Moved above coaster")
+        coaster_centroid = self.get_centroid(coaster_pc)
+        up_pt = copy.deepcopy(coaster_centroid)
+        up_pt.z += 0.1
+        req.position = up_pt
+        self.go_to_position_goal_client.call(req)
+        self.check_mission_done()
+        print("Moved above coaster")
 
-        # place_pt = copy.deepcopy(coaster_centroid)
-        # place_pt.z = self.z + 0.04
-        # req.position = place_pt
-        # self.go_to_position_goal_client.call(req)
-        # self.check_mission_done()
-        # print("Ready to release glass")
+        place_pt = copy.deepcopy(coaster_centroid)
+        place_pt.z = self.z + 0.04
+        req.position = place_pt
+        self.go_to_position_goal_client.call(req)
+        self.check_mission_done()
+        print("Ready to release glass")
 
-        # self.open_gripper_client.call()
-        # self.check_mission_done()
-        # print("Gripper open")
+        self.open_gripper_client.call()
+        self.check_mission_done()
+        print("Gripper open")
 
-        # req.position = place_pt
-        # place_pt.x -= 0.4
-        # self.go_to_position_goal_client.call(req)
-        # self.check_mission_done()
-        # print("Moved to approach pose")
+        req.position = place_pt
+        place_pt.x -= 0.4
+        self.go_to_position_goal_client.call(req)
+        self.check_mission_done()
+        print("Moved to approach pose")
 
     def go_home(self):
         joint_goal = self.read_vector_from_yaml(
-            'franka_record_A_joints.yaml')
+            'franka_home.yaml')
         self.go_to_joint_goal_client.call(joint_goal)
         self.check_mission_done()
         print("Moved home")
@@ -778,24 +691,24 @@ def main():
 
 
         joint_goals = robosoft.read_vectors_from_yaml(
-            'franka_record.yaml')
+            'franka_record_low.yaml')
         robosoft.record(joint_goals)
         robosoft.franka_count_pts()
         print("Done with recording")
 
         robosoft.go_home()
 
-        if task == "task1":
-            print("Starting task 1")
-            robosoft.task1()
-        elif task == "task2":
-            print("Starting task 2")
-            robosoft.task2()
-        elif task == "task3":
-            print("Starting task 3")
-            robosoft.task3()
-        else:
-            print("Select among: task1, task2, task3")
+        # if task == "task1":
+        #     print("Starting task 1")
+        #     robosoft.task1()
+        # elif task == "task2":
+        #     print("Starting task 2")
+        #     robosoft.task2()
+        # elif task == "task3":
+        #     print("Starting task 3")
+        #     robosoft.task3()
+        # else:
+        #     print("Select among: task1, task2, task3")
 
         # pt = PointStamped()
         # pt.header.frame_id = robosoft.base_frame

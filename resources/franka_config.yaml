@@ -1,0 +1,32 @@
+# z: 0.84
+# r: 0.09
+
+# x1: 0.55
+# x2: 0.75
+
+# y1: 0.66
+# y2: 0.46
+# y3: 0.26
+# y4: 0.06
+# y5: -0.14
+# y6: -0.34
+
+z: 0.20
+r: 0.09
+
+x1: 0.56
+x2: 0.8
+
+y6: -0.44
+y5: -0.24
+y4: -0.04
+y3: 0.16
+y2: 0.36
+y1: 0.56
+
+planning_group: 'panda_arm'
+base_frame: 'panda_link0'
+camera_frame: 'panda_camera'
+
+dynamixel_sleep_time: 0.00001
+dynamixel_step: 40

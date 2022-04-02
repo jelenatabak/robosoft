@@ -79,7 +79,7 @@ class UR5e {
     std::vector<geometry_msgs::Pose> posesReference_;
     geometry_msgs::Point positionReference_;
     bool parallel_, perpendicular_, perpendicular_rotate_, constraint_;
-    double move_;
+    geometry_msgs::Point move_;
 
     std::string planning_group_;
     std::shared_ptr <moveit::planning_interface::MoveGroupInterface> move_group_;

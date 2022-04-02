@@ -257,10 +257,12 @@ void UR5e::openGripper() {
     std::cout << "Opening gripper" << std::endl;
     dynamixelCommand_.request.value = openPosition_;
 
-    if (move_ != 0) {
+    if (move_.x != 0 or move_.y != 0 or move_.z != 0) {
         dynamixelCommandWaitClient_.call(dynamixelCommand_);
         geometry_msgs::PoseStamped current = move_group_->getCurrentPose();
-        current.pose.position.x += move_;
+        current.pose.position.x += move_.x;
+        current.pose.position.x += move_.y;
+        current.pose.position.x += move_.z;
         move_group_->clearPoseTargets();
         move_group_->setStartStateToCurrentState();
         move_group_->setPoseTarget(current.pose);
@@ -270,17 +272,21 @@ void UR5e::openGripper() {
 
     dynamixelCommandClient_.call(dynamixelCommand_);
     open_ = false;
-    move_ = 0;
+    move_.x = 0;
+    move_.y = 0;
+    move_.z = 0;
 }
 
 void UR5e::closeGripper() {
     std::cout << "Closing gripper" << std::endl;
     dynamixelCommand_.request.value = closedPosition_;
 
-    if (move_ != 0) {
+    if (move_.x != 0 or move_.y != 0 or move_.z != 0) {
         dynamixelCommandWaitClient_.call(dynamixelCommand_);
         geometry_msgs::PoseStamped current = move_group_->getCurrentPose();
-        current.pose.position.x += move_;
+        current.pose.position.x += move_.x;
+        current.pose.position.x += move_.y;
+        current.pose.position.x += move_.z;
         move_group_->clearPoseTargets();
         move_group_->setStartStateToCurrentState();
         move_group_->setPoseTarget(current.pose);
@@ -290,7 +296,9 @@ void UR5e::closeGripper() {
 
     dynamixelCommandClient_.call(dynamixelCommand_);
     close_ = false;
-    move_ = 0;
+    move_.x = 0;
+    move_.y = 0;
+    move_.z = 0;
 }
 
 bool UR5e::goToJointGoalCallback(robosoft::jointGoal::Request &req, robosoft::jointGoal::Response &res){
