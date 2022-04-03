@@ -259,8 +259,8 @@ void UR5e::openGripper() {
         dynamixelCommandWaitClient_.call(dynamixelCommand_);
         geometry_msgs::PoseStamped current = move_group_->getCurrentPose();
         current.pose.position.x += move_.x;
-        current.pose.position.x += move_.y;
-        current.pose.position.x += move_.z;
+        current.pose.position.y += move_.y;
+        current.pose.position.z += move_.z;
         move_group_->clearPoseTargets();
         move_group_->setStartStateToCurrentState();
         move_group_->setPoseTarget(current.pose);
@@ -283,8 +283,8 @@ void UR5e::closeGripper() {
         dynamixelCommandWaitClient_.call(dynamixelCommand_);
         geometry_msgs::PoseStamped current = move_group_->getCurrentPose();
         current.pose.position.x += move_.x;
-        current.pose.position.x += move_.y;
-        current.pose.position.x += move_.z;
+        current.pose.position.y += move_.y;
+        current.pose.position.z += move_.z;
         move_group_->clearPoseTargets();
         move_group_->setStartStateToCurrentState();
         move_group_->setPoseTarget(current.pose);

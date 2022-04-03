@@ -202,17 +202,19 @@ void UR5e::goToPosition() {
             poseRef.orientation.w = 0.5;
         } 
         else if (perpendicular_) {
-            poseRef.orientation.x = 0.7071068;
-            poseRef.orientation.y = -0.7071068;
+            poseRef.orientation.x = -0.7071068;
+            poseRef.orientation.y = 0.7071068;
             poseRef.orientation.z = 0;
             poseRef.orientation.w = 0;
         }
         else if (perpendicular_rotate_) {
-            poseRef.orientation.x = 0;
-            poseRef.orientation.y = 1;
+            poseRef.orientation.x = 1;
+            poseRef.orientation.y = 0;
             poseRef.orientation.z = 0;
             poseRef.orientation.w = 0;  
         }
+
+        std::cout << poseRef << std::endl;
         move_group_->setPoseTarget(poseRef);
         move_group_->move();
         std::cout << "Done" << std::endl;
@@ -261,8 +263,8 @@ void UR5e::openGripper() {
         dynamixelCommandWaitClient_.call(dynamixelCommand_);
         geometry_msgs::PoseStamped current = move_group_->getCurrentPose();
         current.pose.position.x += move_.x;
-        current.pose.position.x += move_.y;
-        current.pose.position.x += move_.z;
+        current.pose.position.y += move_.y;
+        current.pose.position.z += move_.z;
         move_group_->clearPoseTargets();
         move_group_->setStartStateToCurrentState();
         move_group_->setPoseTarget(current.pose);
@@ -281,12 +283,14 @@ void UR5e::closeGripper() {
     std::cout << "Closing gripper" << std::endl;
     dynamixelCommand_.request.value = closedPosition_;
 
+    std::cout << move_ << std::endl;
+
     if (move_.x != 0 or move_.y != 0 or move_.z != 0) {
         dynamixelCommandWaitClient_.call(dynamixelCommand_);
         geometry_msgs::PoseStamped current = move_group_->getCurrentPose();
         current.pose.position.x += move_.x;
-        current.pose.position.x += move_.y;
-        current.pose.position.x += move_.z;
+        current.pose.position.y += move_.y;
+        current.pose.position.z += move_.z;
         move_group_->clearPoseTargets();
         move_group_->setStartStateToCurrentState();
         move_group_->setPoseTarget(current.pose);
