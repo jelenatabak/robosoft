@@ -1,0 +1,30 @@
+z: 0.097
+r: 0.09
+
+y1: -0.695
+y2: -0.955
+
+x1: 0.546
+x2: 0.346
+x3: 0.146
+
+x4: -0.054
+x5: -0.254
+x6: -0.454
+
+# x1: -0.254
+# x2: -0.254
+# x3: -0.054
+
+# x4: -0.454
+# x5: -0.454
+# x6: -0.454
+
+planning_group: 'manipulator'
+base_frame: 'base_link'
+camera_frame: 'camera'
+
+dynamixel_sleep_time: 0.00001
+dynamixel_step: 150
+
+pour_angle: -1.55

@@ -358,6 +358,78 @@ class Robosoft(object):
         print('Pts A count: ', self.pts_A_count)
         print('Pts B count: ', self.pts_B_count)
 
+    def ur_count_pts(self):
+        z_values = self.points['z']
+
+        mask = ~np.isnan(z_values) * (z_values > self.z)
+        pts_z = self.points[mask]
+        x_values = pts_z['x']
+        y_values = pts_z['y']
+
+        mask = (x_values > self.x4-self.r) * (x_values < self.x4+self.r) * \
+            (y_values > self.y1-self.r) * (y_values < self.y1+self.r)
+        self.pts_A_count[0] += (len(pts_z[mask]))
+        self.pts_A.append(pts_z[mask])
+
+        mask = (x_values > self.x5-self.r) * (x_values < self.x5+self.r) * \
+            (y_values > self.y1-self.r) * (y_values < self.y1+self.r)
+        self.pts_A_count[1] += (len(pts_z[mask]))
+        self.pts_A.append(pts_z[mask])
+
+        mask = (x_values > self.x6-self.r) * (x_values < self.x6+self.r) * \
+            (y_values > self.y1-self.r) * (y_values < self.y1+self.r)
+        self.pts_A_count[2] += (len(pts_z[mask]))
+        self.pts_A.append(pts_z[mask])
+
+        mask = (x_values > self.x4-self.r) * (x_values < self.x4+self.r) * \
+            (y_values > self.y2-self.r) * (y_values < self.y2+self.r)
+        self.pts_A_count[3] += (len(pts_z[mask]))
+        self.pts_A.append(pts_z[mask])
+
+        mask = (x_values > self.x5-self.r) * (x_values < self.x5+self.r) * \
+            (y_values > self.y2-self.r) * (y_values < self.y2+self.r)
+        self.pts_A_count[4] += (len(pts_z[mask]))
+        self.pts_A.append(pts_z[mask])
+
+        mask = (x_values > self.x6-self.r) * (x_values < self.x6+self.r) * \
+            (y_values > self.y2-self.r) * (y_values < self.y2+self.r)
+        self.pts_A_count[5] += (len(pts_z[mask]))
+        self.pts_A.append(pts_z[mask])
+
+        mask = (x_values > self.x1-self.r) * (x_values < self.x1+self.r) * \
+            (y_values > self.y1-self.r) * (y_values < self.y1+self.r)
+        self.pts_B_count[0] += (len(pts_z[mask]))
+        self.pts_B.append(pts_z[mask])
+
+        mask = (x_values > self.x2-self.r) * (x_values < self.x2+self.r) * \
+            (y_values > self.y1-self.r) * (y_values < self.y1+self.r)
+        self.pts_B_count[1] += (len(pts_z[mask]))
+        self.pts_B.append(pts_z[mask])
+
+        mask = (x_values > self.x3-self.r) * (x_values < self.x3+self.r) * \
+            (y_values > self.y1-self.r) * (y_values < self.y1+self.r)
+        self.pts_B_count[2] += (len(pts_z[mask]))
+        self.pts_B.append(pts_z[mask])
+
+        mask = (x_values > self.x1-self.r) * (x_values < self.x1+self.r) * \
+            (y_values > self.y2-self.r) * (y_values < self.y2+self.r)
+        self.pts_B_count[3] += (len(pts_z[mask]))
+        self.pts_B.append(pts_z[mask])
+
+        mask = (x_values > self.x2-self.r) * (x_values < self.x2+self.r) * \
+            (y_values > self.y2-self.r) * (y_values < self.y2+self.r)
+        self.pts_B_count[4] += (len(pts_z[mask]))
+        self.pts_B.append(pts_z[mask])
+
+        mask = (x_values > self.x3-self.r) * (x_values < self.x3+self.r) * \
+            (y_values > self.y2-self.r) * (y_values < self.y2+self.r)
+        self.pts_B_count[5] += (len(pts_z[mask]))
+        self.pts_B.append(pts_z[mask])
+
+        print('Done with pc filtering')
+        print('Pts A count: ', self.pts_A_count)
+        print('Pts B count: ', self.pts_B_count)
+
     def get_positions(self, A_num, B_num):
         A_ind = np.sort(np.argpartition(self.pts_A_count, -A_num)[-A_num:])
         B_ind = np.sort(np.argpartition(self.pts_B_count, -B_num)[-B_num:])

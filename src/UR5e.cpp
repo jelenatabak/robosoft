@@ -14,8 +14,8 @@ UR5e::UR5e (ros::NodeHandle& nodeHandle) {
     velocity_scale_ = 1;
     acceleration_scale_ = 1;
 
-    openPosition_ = 3000;
-    closedPosition_ = 4200;
+    openPosition_ = 1700;
+    closedPosition_ = 700;
 
     dynamixelCommand_.request.id = 1;
     dynamixelCommand_.request.addr_name = "Goal_Position";
@@ -41,18 +41,28 @@ UR5e::UR5e (ros::NodeHandle& nodeHandle) {
     missionDoneClient_ = nodeHandle.serviceClient<std_srvs::Trigger>("/mission_done");
 
     nodeHandle.getParam("/robosoft/planning_group", planning_group_);
+    nodeHandle.getParam("/robosoft/pour_angle", pour_angle_);
     move_group_ = std::make_shared<moveit::planning_interface::MoveGroupInterface> (planning_group_);
+
+    move_group_->setStartStateToCurrentState();
+    // move_group_->setNumPlanningAttempts(10);
+    // move_group_->setPlanningTime(20);
+    move_group_->clearPathConstraints();
 
     std::cout << "Reference frame: " << move_group_->getPlanningFrame() << std::endl;
     std::cout << "End effector link: " << move_group_->getEndEffectorLink() << std::endl;
+    std::cout << "Pose: " << move_group_->getCurrentPose() << std::endl;
+    std::vector<double> states = move_group_->getCurrentJointValues();
+
 
     // Add collisions
     ros::Duration(2).sleep();
     float z_board;
     nodeHandle.getParam("/robosoft/z", z_board);
     std::vector<moveit_msgs::CollisionObject> collision_objects;
-    collision_objects.push_back(addBox("board", 2,2,z_board+0.01,-1,0,0));
-    collision_objects.push_back(addBox("wall", 2,0.2,2,-1,0.8,0));
+    collision_objects.push_back(addBox("board", 2,2,0.01,-1,0,-0.03));
+    collision_objects.push_back(addBox("board2", 2,0.7,0.01,-1,-0.82,0.095));
+    collision_objects.push_back(addBox("wall", 2,0.2,2,-1,0.75,0));
     planning_scene_interface_.addCollisionObjects(collision_objects);
     std::cout << "Added collision" << std::endl;
     std::cout << "Robot is ready!" << std::endl;
@@ -96,6 +106,7 @@ void UR5e::goToJointGoal() {
     try {
         move_group_->clearPoseTargets();
         move_group_->setMaxVelocityScalingFactor(velocity_scale_);
+        move_group_->setMaxAccelerationScalingFactor(acceleration_scale_);
         move_group_->setStartStateToCurrentState();
         moveit::planning_interface::MoveGroupInterface::Plan my_plan;
         moveit_msgs::MoveItErrorCodes errorCode;
@@ -120,8 +131,15 @@ void UR5e::goToJointGoal() {
 void UR5e::goToPoseGoal() {
     std::cout << "Moving to pose goal" << std::endl;
     try{
+        tf2::Quaternion quat;
+        tf2::fromMsg(poseReference_.orientation, quat);
+        quat.normalize();
+        geometry_msgs::Quaternion quat_msg;
+        quat_msg = tf2::toMsg(quat);
+        poseReference_.orientation = quat_msg;
         move_group_->clearPoseTargets();
         move_group_->setMaxVelocityScalingFactor(velocity_scale_);
+        move_group_->setMaxAccelerationScalingFactor(acceleration_scale_);
         move_group_->setStartStateToCurrentState();
         move_group_->setPoseTarget(poseReference_);
         move_group_->move();
@@ -136,6 +154,8 @@ void UR5e::goToPoseGoal() {
 
 void UR5e::planCartesianPath() {
     std::cout << "Planning cartesian path" << std::endl;
+    move_group_->setMaxVelocityScalingFactor(velocity_scale_);
+    move_group_->setMaxAccelerationScalingFactor(acceleration_scale_);
     try{
         move_group_->clearPoseTargets();
         moveit_msgs::RobotTrajectory trajectory;
@@ -164,6 +184,8 @@ void UR5e::planCartesianPath() {
 
 void UR5e::goToPosition() {
     std::cout << "Moving to position goal" << std::endl;
+    move_group_->setMaxVelocityScalingFactor(velocity_scale_);
+    move_group_->setMaxAccelerationScalingFactor(acceleration_scale_);
     try{
         move_group_->clearPoseTargets();
         move_group_->setStartStateToCurrentState();
@@ -176,15 +198,15 @@ void UR5e::goToPosition() {
             if(constraint_) {
                 constraint_ = false;
                 moveit_msgs::OrientationConstraint ocm;
-                ocm.link_name = "panda_link8";
-                ocm.header.frame_id = "panda_link0";
-                ocm.orientation.x = 0;
-                ocm.orientation.y = 0.7071068;
-                ocm.orientation.z = 0;
-                ocm.orientation.w = 0.7071068;
-                ocm.absolute_x_axis_tolerance = 0.3;
-                ocm.absolute_y_axis_tolerance = 3.14;
-                ocm.absolute_z_axis_tolerance = 0.3;
+                ocm.link_name = "tool0";
+                ocm.header.frame_id = "base_link";
+                ocm.orientation.x = 0.5927576;
+                ocm.orientation.y = 0.3918398;
+                ocm.orientation.z = -0.3928394;
+                ocm.orientation.w = 0.5837613;
+                ocm.absolute_x_axis_tolerance = 0.2;
+                ocm.absolute_y_axis_tolerance = 0.2;
+                ocm.absolute_z_axis_tolerance = 0.2;
                 ocm.weight = 1.0;
 
                 moveit_msgs::Constraints test_constraints;
@@ -192,17 +214,16 @@ void UR5e::goToPosition() {
                 move_group_->setPathConstraints(test_constraints);
 
             }
-            poseRef.orientation.x = 0;
-            poseRef.orientation.y = 0.7071068;
-            poseRef.orientation.z = 0;
-            poseRef.orientation.w = 0.7071068;
-
+            poseRef.orientation.x = 0.5927576;
+            poseRef.orientation.y = 0.3918398;
+            poseRef.orientation.z = -0.3928394;
+            poseRef.orientation.w = 0.5837613;
         } 
         else if (perpendicular_) {
-            poseRef.orientation.x = 1;
-            poseRef.orientation.y = 0;
-            poseRef.orientation.z = 0;
-            poseRef.orientation.w = 0;
+            poseRef.orientation.x = 0.823;
+            poseRef.orientation.y = 0.567;
+            poseRef.orientation.z = 0.023;
+            poseRef.orientation.w = 0.001;
         }
 
         else if (perpendicular_rotate_) {
@@ -211,9 +232,29 @@ void UR5e::goToPosition() {
             poseRef.orientation.z = 0;
             poseRef.orientation.w = 0;  
         }
+
+        tf2::Quaternion quat;
+        tf2::fromMsg(poseRef.orientation, quat);
+        quat.normalize();
+        geometry_msgs::Quaternion quat_msg;
+        quat_msg = tf2::toMsg(quat);
+        poseRef.orientation = quat_msg;
+
+        std::cout << poseRef << std::endl;
+
         move_group_->setPoseTarget(poseRef);
+        // move_group_->setApproximateJointValueTarget(poseRef);
         move_group_->move();
+
+        // moveit_visual_tools::MoveItVisualTools visual_tools("base_link");
+        // const moveit::core::JointModelGroup* joint_model_group = move_group_->getCurrentState()->getJointModelGroup("manipulator");
+        // visual_tools.deleteAllMarkers();
+        // moveit::planning_interface::MoveGroupInterface::Plan my_plan;
+        // bool success = (move_group_->plan(my_plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+        // visual_tools.publishAxisLabeled(poseRef, "pose1");
+        // visual_tools.publishTrajectoryLine(my_plan.trajectory_, joint_model_group);
         std::cout << "Done" << std::endl;
+        move_group_->clearPathConstraints();
 
         position_ = false;
 
@@ -226,7 +267,7 @@ void UR5e::pour() {
     std::cout << "Pouring whiskey" << std::endl;
 
     std::vector<double> jointTarget = move_group_->getCurrentJointValues();
-    jointTarget.back() -= 1;
+    jointTarget.back() += pour_angle_;
 
     try {
         move_group_->clearPoseTargets();
