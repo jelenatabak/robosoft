@@ -13,7 +13,6 @@ from geometry_msgs.msg import Pose, Point, PointStamped
 from robosoft.srv import *
 from std_srvs.srv import Trigger, TriggerResponse
 import rospkg
-import pcl
 
 
 class Robosoft(object):
@@ -82,7 +81,42 @@ class Robosoft(object):
         self.points_list = []
         self.points_list_segmented = []
 
-        self.delta_z = 0.45
+        # self.approach_delta_y = 0.45
+        # self.grasp_delta_y = 0.25
+        # self.close_servo_y = -0.03
+        # self.open_servo_y = -0.03
+
+        # vrijednosti s distancerom
+        # self.approach_delta_y = -0.45
+        # self.grasp_delta_y = -0.25
+        # self.approach_delta_z = 0.45
+        # self.grasp_delta_z = 0.32
+
+        self.approach_delta_y = -0.4
+        self.grasp_delta_y = -0.20
+        self.approach_delta_z = 0.4
+        self.grasp_delta_z = 0.26
+
+        self.close_servo_y = 0.03
+        self.open_servo_y = -0.03
+        self.close_servo_z = -0.02
+        self.open_servo_z = 0.03
+        self.up_delta = 0.1  # task 2 & 3
+
+
+        # task specific
+        self.pts_thresh = 100
+        self.grasp_z_thresh = 0.06 # TODO provjeri visinu objekata 
+        self.box_approach_delta_z = 0.15
+        self.box_release_delta_z = 0.05
+
+        self.pot_z = 0.1
+        self.pot_grasp = 0.05
+
+        self.bottle_grasp = 0.1
+        self.glass_height = 0.08
+        self.glass_grasp = 0.05
+        self.pouring_distance = 0.2
 
     def mission_done_callback(self, req):
         self.mission_done = True
@@ -184,121 +218,6 @@ class Robosoft(object):
             self.points_list.append(points)
 
         self.points = np.concatenate(self.points_list)
-
-    def record_devel(self, joint_goals):
-        for i in range(len(joint_goals)):
-            self.go_to_joint_goal_client.call(joint_goals[i])
-            self.check_mission_done()
-            print("Recording from state ", i)
-
-            print('Waiting for pc message')
-            self.pc_msg = rospy.wait_for_message(self.pc_topic, PointCloud2)
-            print('Recieved pc message')
-
-            print('Waiting for tf')
-            try:
-                trans = self.tfBuffer.lookup_transform(
-                    self.base_frame, self.camera_frame, rospy.Time())
-            except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
-                print('Did not get transform')
-
-            self.pc_glob = do_transform_cloud(self.pc_msg, trans)
-            print('Transformed point cloud')
-
-            points = ros_numpy.point_cloud2.pointcloud2_to_array(self.pc_msg)
-            # z_values = points['z']
-            # mask = ~np.isnan(z_values) 
-            # points = points[mask]
-
-            #self.points_list.append(points)
-            # for row in points:
-            #     self.points_list.append([row[0], row[1], row[2], row[3]])
-
-        self.points = np.concatenate(self.points_list)
-
-        #     self.points = np.array(self.points_list)
-        #     self.points_list_segmented.append(self.segment_plane())
-
-        # self.points_segmented = np.concatenate(self.points_list_segmented)
-
-        # pc_pub_plane = rospy.Publisher("/segmented_plane", PointCloud2, queue_size=10)
-        # pc = self.point_cloud(self.points_segmented, "panda_link0")
-
-        # while not rospy.is_shutdown():
-        #     pc_pub_plane.publish(pc)
-        #     rospy.sleep(1)
-
-        # self.pc = pc
-        # self.points = ros_numpy.point_cloud2.pointcloud2_to_array(self.pc)
-
-
-    def segment_plane(self):
-
-        self.points_g = self.points[:,0:3]
-        cloud = pcl.PointCloud()
-        cloud.from_array(np.array(self.points_g))
-        seg = cloud.make_segmenter_normals(ksearch=50)
-        seg.set_optimize_coefficients(True)
-        seg.set_model_type(pcl.SACMODEL_PLANE)
-        # seg.set_model_type(pcl.SACMODEL_PERPENDICULAR_PLANE)
-        # seg.set_axis(0., 0., 1.0)
-        seg.set_eps_angle(0.2)
-        seg.set_normal_distance_weight(0.05)
-        seg.set_method_type(pcl.SAC_RANSAC)
-        seg.set_max_iterations(200)
-        seg.set_distance_threshold(0.02)
-        inliers, model = seg.segment()
-
-        if len(inliers)>1:
-            print(len(inliers))
-            inliers = np.array(inliers)
-
-            ind = np.arange(len(self.points_g))
-            outliers = []
-            counter = 0
-
-            for i in ind:
-                if i not in inliers:
-                    outliers.append(i)
-                    counter += 1
-
-            points2 = self.points[outliers,:]
-
-            return points2
-
-
-
-    def point_cloud(self, points, parent_frame):
-        ros_dtype = PointField.FLOAT32
-        dtype = np.float32
-        itemsize = np.dtype(dtype).itemsize
-
-        data = points.astype(dtype).tobytes()
-
-        offsets = [0,4,8,16]
-        offsets = [0,4,8,12]
-
-        fields = [PointField(
-            name=n, offset=offsets[i], datatype=ros_dtype, count=1)
-            for i, n in enumerate(['x','y','z','rgb'])]
-
-
-        header = Header(frame_id=parent_frame, stamp=rospy.Time.now())
-
-        return PointCloud2(
-            header=header,
-            height=1,
-            width=points.shape[0],
-            is_dense=False,
-            is_bigendian=False,
-            fields=fields,
-            point_step=itemsize*4,
-            row_step=32*points.shape[0],
-            data=data
-        )
-
-
-
 
     def ur_count_pts(self):
         z_values = self.points['z']
@@ -418,28 +337,55 @@ class Robosoft(object):
         filtered = pc[mask]
         return filtered
 
-
     def grasp(self, pc):
         centroid_pt = self.get_centroid(pc)
         dimensions = self.get_dimensions(pc)
 
-        req = positionGoalRequest()
-        req_gripper = graspRequest()
+        if dimensions[2] > self.grasp_z_thresh:
+            print("Grasping can")
+            self.go_home_parallel()
+            req = positionGoalRequest()
+            req_gripper = graspRequest()
 
-        req.parallel = False
-        req.perpendicular = True
-        req.perpendicular_rotate = False
-        req.constraint = False
+            req.parallel = True
+            req.perpendicular = False
+            req.perpendicular_rotate = False
+            req.constraint = False
 
-        approach_pt = copy.deepcopy(centroid_pt)
-        approach_pt.z = 0.45
+            approach_pt = copy.deepcopy(centroid_pt)
+            approach_pt.y += self.approach_delta_y
 
-        grasp_pt = copy.deepcopy(centroid_pt)
-        grasp_pt.z = 0.31
+            grasp_pt = copy.deepcopy(centroid_pt)
+            grasp_pt.y += self.grasp_delta_y
 
-        req_gripper.move.x = 0
-        req_gripper.move.y = 0
-        req_gripper.move.z = -0.02
+            req_gripper.move.x = 0
+            req_gripper.move.y = self.close_servo_y
+            req_gripper.move.z = 0
+
+            ret_val = 1
+        else:
+            req = positionGoalRequest()
+            req_gripper = graspRequest()
+
+            req.parallel = False
+            req.perpendicular = True
+            req.perpendicular_rotate = False
+            req.constraint = False
+
+            approach_pt = copy.deepcopy(centroid_pt)
+            #approach_pt.z = 0.45
+            approach_pt.z = self.z + self.approach_delta_z 
+
+            grasp_pt = copy.deepcopy(centroid_pt)
+            #grasp_pt.z = 0.31
+            grasp_pt.z = self.z + self.grasp_delta_z
+
+            req_gripper.move.x = 0
+            req_gripper.move.y = 0
+            req_gripper.move.z = self.close_servo_z
+
+            ret_val = 0
+
 
         req.position = approach_pt
         self.go_to_position_goal_client.call(req)
@@ -462,9 +408,10 @@ class Robosoft(object):
         self.check_mission_done()
         print("Moved above object")
 
+        return ret_val
 
-    def task1(self):
-
+    # all objects are released with perpendicular orientation
+    def task1_old(self):
         self.go_home_pick()
         joint_goals = self.read_vectors_from_yaml(
             'ur_record_pick.yaml')
@@ -479,14 +426,11 @@ class Robosoft(object):
         box_pc = self.pts_B[B_ind[0]]
         box_centroid = self.get_centroid(box_pc)
 
-        print("Box centroid: ")
-        print(box_centroid)
-
         up_pt = copy.deepcopy(box_centroid)
-        up_pt.z = self.get_max(box_pc, 'z') + 0.45
+        up_pt.z = self.get_max(box_pc, 'z') + self.approach_delta_z
 
         place_pt = copy.deepcopy(box_centroid)
-        place_pt.z = self.get_max(box_pc, 'z') + 0.32
+        place_pt.z = self.get_max(box_pc, 'z') + self.grasp_delta_z     
 
         req = positionGoalRequest()
         req.parallel = False
@@ -497,12 +441,14 @@ class Robosoft(object):
         req_gripper = graspRequest()
         req_gripper.move.x = 0
         req_gripper.move.y = 0
-        req_gripper.move.z = 0.03
+        req_gripper.move.z = self.open_servo_z
 
         for i in A_ind:
-            print(i)
+            if self.pts_A_count[i] < self.pts_thresh:
+                continue
+
             pc = self.pts_A[i]
-            self.grasp(pc)
+            self.grasp(pc)    
 
             req.position = up_pt
             self.go_to_position_goal_client.call(req)
@@ -527,18 +473,111 @@ class Robosoft(object):
 
         print("Done with task 1")
 
+    def task1(self):
+        self.go_home_pick()
+        joint_goals = self.read_vectors_from_yaml(
+            'ur_record_pick.yaml')
+        self.record(joint_goals)
+        self.ur_count_pts()
+        print("Done with recording")
+
+        self.go_home_pick()
+
+        A_ind, B_ind = self.get_positions(3, 1)
+
+        box_pc = self.pts_B[B_ind[0]]
+        box_centroid = self.get_centroid(box_pc)
+
+        for i in A_ind:
+            if self.pts_A_count[i] < self.pts_thresh:
+                print("Number of points in " + str(i) + " is under threshold. Skipping.")
+                continue
+
+            pc = self.pts_A[i]
+            ret_val = self.grasp(pc)    
+
+            if ret_val:
+                self.go_home_parallel()
+                # one point more than with perpendicular
+                approach_pt = copy.deepcopy(box_centroid)
+                approach_pt.z = self.get_max(box_pc, 'z') + self.box_approach_delta_z
+                approach_pt.y += self.approach_delta_y
+                req.position = approach_pt
+                self.go_to_position_goal_client.call(req)
+                self.check_mission_done()
+                print("Approaching the box")
+
+                approach_pt = copy.deepcopy(box_centroid)
+                approach_pt.z = self.get_max(box_pc, 'z') + self.box_approach_delta_z
+                approach_pt.y += self.grasp_delta_y
+
+                place_pt = copy.deepcopy(box_centroid)
+                place_pt.z = self.get_max(box_pc, 'z') + self.box_release_delta_z  
+                place_pt.y += self.grasp_delta_y
+
+                req = positionGoalRequest()
+                req.parallel = True
+                req.perpendicular = False
+                req.perpendicular_rotate = False
+                req.constraint = False
+
+                req_gripper = graspRequest()
+                req_gripper.move.x = 0
+                req_gripper.move.y = 0
+                req_gripper.move.z = 0
+
+            else:
+                approach_pt = copy.deepcopy(box_centroid)
+                approach_pt.z = self.get_max(box_pc, 'z') + self.approach_delta_z
+
+                place_pt = copy.deepcopy(box_centroid)
+                place_pt.z = self.get_max(box_pc, 'z') + self.grasp_delta_z     
+
+                req = positionGoalRequest()
+                req.parallel = False
+                req.perpendicular = True
+                req.perpendicular_rotate = False
+                req.constraint = False
+
+                req_gripper = graspRequest()
+                req_gripper.move.x = 0
+                req_gripper.move.y = 0
+                req_gripper.move.z = self.open_servo_z
+
+
+            req.position = approach_pt
+            self.go_to_position_goal_client.call(req)
+            self.check_mission_done()
+            print("Moved above box")
+
+            req.position = place_pt
+            self.go_to_position_goal_client.call(req)
+            self.check_mission_done()
+            print("Moved to place pose")
+
+            self.open_gripper_client.call(req_gripper)
+            self.check_mission_done()
+            print("Object placed")
+
+            req.position = approach_pt
+            self.go_to_position_goal_client.call(req)
+            self.check_mission_done()
+            print("Moved above box")
+
+            # TODO mozda ce trebati jos jedna tocka za pick paralelni prije home_pick
+            self.go_home_pick()
+
     def task2(self):
         self.go_home_parallel()
         joint_goals = self.read_vectors_from_yaml(
-            'ur_record_far.yaml')
+            'ur_record.yaml')
         self.record(joint_goals)
         self.ur_count_pts()
         print("Done with recording")
 
         self.go_home_parallel()
 
-        pot_z = 0.1
-        A_ind, B_ind = self.get_positions(1, 1)
+        A_ind, B_ind = self.get_positions(2, 2)
 
         req = positionGoalRequest()
         req.parallel = True
@@ -553,40 +592,36 @@ class Robosoft(object):
             shelf_i = B_ind[i]
 
             plant_pc = self.pts_A[pot_i]
-            pot_pc = self.filter(plant_pc, 'z', self.z, self.z+pot_z)
+            pot_pc = self.filter(plant_pc, 'z', self.z, self.z+self.pot_z)
 
             centroid_pt = self.get_centroid(pot_pc)
             dimensions = self.get_dimensions(pot_pc)
 
             approach_pt = copy.deepcopy(centroid_pt)
-            #approach_pt.x -= 0.4
-            approach_pt.y += self.delta_z
-            approach_pt.z = self.z + 0.05
+            approach_pt.y += self.approach_delta_y
+            approach_pt.z = self.z + self.pot_grasp
             req.position = approach_pt
             self.go_to_position_goal_client.call(req)
             self.check_mission_done()
             print("Moved to approach pose")
 
-            print(approach_pt)
 
             grasp_pt = copy.deepcopy(centroid_pt)
-            # grasp_pt.x -= 0.2
-            grasp_pt.y += 0.25
-            grasp_pt.z = self.z + 0.05
+            grasp_pt.y += self.grasp_delta_y
+            grasp_pt.z = self.z + self.pot_grasp
             req.position = grasp_pt
             self.go_to_position_goal_client.call(req)
             self.check_mission_done()
             print("Moved to grasp pose")
 
             req_gripper = graspRequest()
-            # req_gripper.move.x = 0.03
-            req_gripper.move.y = -0.03
+            req_gripper.move.y = self.grasp_servo_y
             self.close_gripper_client.call(req_gripper)
             self.check_mission_done()
             print("Object grasped")
 
             up_pt = copy.deepcopy(grasp_pt)
-            up_pt.z += 0.1
+            up_pt.z += self.up_delta
             req.position = up_pt
             # req.constraint = True
             self.go_to_position_goal_client.call(req)
@@ -600,8 +635,8 @@ class Robosoft(object):
             self.go_home_parallel()
 
             shelf_up_pt = copy.deepcopy(shelf_centroid)
-            shelf_up_pt.y += 0.25
-            shelf_up_pt.z = shelf_z + 0.1
+            shelf_up_pt.y += self.grasp_delta_y
+            shelf_up_pt.z = shelf_z + self.up_delta
             req.position = shelf_up_pt
             # req.constraint = True
             print(req)
@@ -610,8 +645,8 @@ class Robosoft(object):
             print("Moved above shelf")
 
             place_pt = copy.deepcopy(shelf_centroid)
-            place_pt.y += 0.25
-            place_pt.z = shelf_z + 0.05
+            place_pt.y += self.grasp_delta_y
+            place_pt.z = shelf_z + self.pot_grasp
             req.position = place_pt
             # req.constraint = True
             print(req)
@@ -619,14 +654,14 @@ class Robosoft(object):
             self.check_mission_done()
             print("Moved to place pose")
 
-            req_gripper.move.y = 0.03
+            req_gripper.move.y = self.open_servo_y
             self.open_gripper_client.call(req_gripper)
             self.check_mission_done()
             print("Object placed")
 
             back_pt = copy.deepcopy(shelf_centroid)
-            back_pt.y += self.delta_z
-            back_pt.z = shelf_z + 0.05
+            back_pt.y += self.approach_delta_y
+            back_pt.z = shelf_z + self.pot_grasp
             req.position = back_pt
             self.go_to_position_goal_client.call(req)
             self.check_mission_done()
@@ -639,7 +674,7 @@ class Robosoft(object):
     def task3(self):
         self.go_home_parallel()
         joint_goals = self.read_vectors_from_yaml(
-            'ur_record_far.yaml')
+            'ur_record.yaml')
         self.record(joint_goals)
         self.ur_count_pts()
         print("Done with recording")
@@ -649,13 +684,24 @@ class Robosoft(object):
         A_ind, B_ind = self.get_positions(1, 2)
 
         if self.get_max(self.pts_B[B_ind[0]], 'z') > self.get_max(self.pts_B[B_ind[1]], 'z'):
-            glass_pc = self.pts_B[B_ind[0]]
-            print("Glass: " + str(B_ind[0]))
-            coaster_pc = self.pts_B[B_ind[1]]
+            glass_index = B_ind[0]
+            coaster_index = B_ind[1]
         else:
-            glass_pc = self.pts_B[B_ind[1]]
-            print("Glass: " + str (B_ind[1]))
-            coaster_pc = self.pts_B[B_ind[0]]
+            glass_index = B_ind[1]
+            coaster_index = B_ind[0]
+
+        glass_pc = self.pts_B[glass_index]
+        print("Glass: " + str(glass_index))
+        
+        if self.pts_B_count[coaster_index] < self.pts_thresh:
+            print("Number of points in " + str(coaster_index) + " is under threshold. Switching to color based coaster detection.")
+            coaster_centroid = self.detect_by_color(skip_index=glass_index)
+            print(coaster_centroid)
+            coaster_height = 0
+        else:
+            coaster_pc = self.pts_B[coaster_index]
+            coaster_centroid = self.get_centroid(coaster_pc)
+            coaster_height = self.get_max(coaster_pc, 'z')
         
         req = positionGoalRequest()
         req.parallel = True
@@ -668,28 +714,28 @@ class Robosoft(object):
         dimensions = self.get_dimensions(whiskey_pc)
 
         approach_pt = copy.deepcopy(centroid_pt)
-        approach_pt.y += self.delta_z
+        approach_pt.y += self.approach_delta_y
         req.position = approach_pt
         self.go_to_position_goal_client.call(req)
         self.check_mission_done()
         print("Moved to approach pose")
 
         grasp_pt = copy.deepcopy(centroid_pt)
-        grasp_pt.y += 0.25
-        grasp_pt.z = self.z + 0.1
+        grasp_pt.y += self.grasp_delta_y
+        grasp_pt.z = self.z + self.bottle_grasp
         req.position = grasp_pt
         self.go_to_position_goal_client.call(req)
         self.check_mission_done()
         print("Moved to grasp pose")
 
         req_gripper = graspRequest()
-        req_gripper.move.y = -0.03   
+        req_gripper.move.y = self.close_servo_y
         self.close_gripper_client.call(req_gripper)
         self.check_mission_done()
         print("Object grasped")
 
         up_pt = copy.deepcopy(grasp_pt)
-        up_pt.z += 0.1
+        up_pt.z += self.up_delta
         req.position = up_pt
         self.go_to_position_goal_client.call(req)
         self.check_mission_done()
@@ -697,16 +743,16 @@ class Robosoft(object):
 
         glass_centroid = self.get_centroid(glass_pc)
         glass_up_pt = copy.deepcopy(glass_centroid)
-        glass_up_pt.z = self.z + 0.08 + 0.1
-        glass_up_pt.x -= 0.2   # pouring distance
-        glass_up_pt.y += 0.25
+        glass_up_pt.z = self.z + self.glass_height + self.up_delta
+        glass_up_pt.x += self.pouring_distance      
+        glass_up_pt.y += self.grasp_delta_y
         req.position = glass_up_pt
         # req.constraint = True
         self.go_to_position_goal_client.call(req)
         self.check_mission_done()
         print("Moved above glass")
 
-        self.pour_client.call() # num deg?
+        self.pour_client.call() 
         self.check_mission_done()
         print("Poured whiskey!")
 
@@ -725,7 +771,7 @@ class Robosoft(object):
         self.check_mission_done()
         print("Moved to release pose")
 
-        req_gripper.move.y = 0.03 
+        req_gripper.move.y = self.open_servo_y
         self.open_gripper_client.call(req_gripper)
         self.check_mission_done()
         print("Gripper open")
@@ -737,65 +783,60 @@ class Robosoft(object):
 
         self.go_home_parallel()
 
-
-        whiskey_glass_grasp = 0.05
         approach_pt = copy.deepcopy(glass_centroid)
-        approach_pt.y += self.delta_z
-        approach_pt.z = self.z + whiskey_glass_grasp
+        approach_pt.y += self.approach_delta_y
+        approach_pt.z = self.z + self.glass_grasp
         req.position = approach_pt
         self.go_to_position_goal_client.call(req)
         self.check_mission_done()
         print("Moved to glass approach pose")
 
         glass_pt = copy.deepcopy(glass_centroid)
-        glass_pt.z = self.z + whiskey_glass_grasp
-        glass_pt.y += 0.25
+        glass_pt.z = self.z + self.glass_grasp
+        glass_pt.y += self.grasp_delta_y
         req.position = glass_pt
         self.go_to_position_goal_client.call(req)
         self.check_mission_done()
         print("Moved to glass")
 
         req_gripper = graspRequest()
-        req_gripper.move.y = -0.03 
+        req_gripper.move.y = self.close_servo_y
         self.close_gripper_client.call(req_gripper)
         self.check_mission_done()
         print("Object grasped")
 
         up_pt = copy.deepcopy(glass_pt)
-        up_pt.z += 0.1 
+        up_pt.z += self.up_delta
         req.position = up_pt
         self.go_to_position_goal_client.call(req)
         self.check_mission_done()
         print("Moved above glass")
 
-
-        coaster_centroid = self.get_centroid(coaster_pc)
-        coaster_height = self.get_max(coaster_pc, 'z')
         up_pt = copy.deepcopy(coaster_centroid)
-        up_pt.z = coaster_height + 0.1 
-        up_pt.y += 0.25
+        up_pt.z = coaster_height + self.up_delta
+        up_pt.y += self.grasp_delta_y
         req.position = up_pt
         self.go_to_position_goal_client.call(req)
         self.check_mission_done()
         print("Moved above coaster")
 
         place_pt = copy.deepcopy(coaster_centroid)
-        place_pt.z = coaster_height + whiskey_glass_grasp
-        place_pt.y += 0.25
+        place_pt.z = coaster_height + self.glass_grasp
+        place_pt.y += self.grasp_delta_y
         req.position = place_pt
         self.go_to_position_goal_client.call(req)
         self.check_mission_done()
         print("Ready to release glass")
 
         req_gripper = graspRequest()
-        req_gripper.move.y = 0.03 
+        req_gripper.move.y = self.open_servo_y
         self.open_gripper_client.call(req_gripper)
         self.check_mission_done()
         print("Object grasped")
 
         last_pt = copy.deepcopy(coaster_centroid)
-        last_pt.z = self.z + coaster_height + whiskey_glass_grasp
-        last_pt.y += self.delta_z
+        last_pt.z = self.z + coaster_height + self.glass_grasp
+        last_pt.y += self.approach_delta_y
         req.position = last_pt
         self.go_to_position_goal_client.call(req)
         self.check_mission_done()
@@ -814,10 +855,94 @@ class Robosoft(object):
 
     def go_home_parallel(self):
         joint_goal = self.read_vector_from_yaml(
-            'ur_home_far.yaml')
+            'ur_home.yaml')
         self.go_to_joint_goal_client.call(joint_goal)
         self.check_mission_done()
         print("Moved home")
+
+
+    def detect_by_color(self, skip_index):
+        points = ros_numpy.point_cloud2.split_rgb_field(self.points)
+
+        x_values = points['x']
+        mask = ~np.isnan(x_values) 
+        points = points[mask]
+        y_values = points['y']
+        x_values = points['x']
+        
+        r_tmp = self.r
+        self.r = 0.05   # check only subset of section
+
+        avg_color_list = []
+        section_pts_list = []
+
+        mask = (x_values > self.x1-self.r) * (x_values < self.x1+self.r) * \
+            (y_values > self.y1-self.r) * (y_values < self.y1+self.r)
+        section_pts = points[mask]
+        section_pts_list.append(section_pts)
+        avg_color = np.average(section_pts['r']) + np.average(section_pts['g']) + np.average(section_pts['b'])
+        avg_color_list.append(avg_color)
+
+        mask = (x_values > self.x2-self.r) * (x_values < self.x2+self.r) * \
+            (y_values > self.y1-self.r) * (y_values < self.y1+self.r)
+        section_pts = points[mask]
+        section_pts_list.append(section_pts)
+        avg_color = np.average(section_pts['r']) + np.average(section_pts['g']) + np.average(section_pts['b'])
+        avg_color_list.append(avg_color)
+
+        mask = (x_values > self.x3-self.r) * (x_values < self.x3+self.r) * \
+            (y_values > self.y1-self.r) * (y_values < self.y1+self.r)
+        section_pts = points[mask]
+        section_pts_list.append(section_pts)
+        avg_color = np.average(section_pts['r']) + np.average(section_pts['g']) + np.average(section_pts['b'])
+        avg_color_list.append(avg_color)
+
+        mask = (x_values > self.x1-self.r) * (x_values < self.x1+self.r) * \
+            (y_values > self.y2-self.r) * (y_values < self.y2+self.r)
+        section_pts = points[mask]
+        section_pts_list.append(section_pts)
+        avg_color = np.average(section_pts['r']) + np.average(section_pts['g']) + np.average(section_pts['b'])
+        avg_color_list.append(avg_color)
+
+        mask = (x_values > self.x2-self.r) * (x_values < self.x2+self.r) * \
+            (y_values > self.y2-self.r) * (y_values < self.y2+self.r)
+        section_pts = points[mask]
+        section_pts_list.append(section_pts)
+        avg_color = np.average(section_pts['r']) + np.average(section_pts['g']) + np.average(section_pts['b'])
+        avg_color_list.append(avg_color)
+
+        mask = (x_values > self.x3-self.r) * (x_values < self.x3+self.r) * \
+            (y_values > self.y2-self.r) * (y_values < self.y2+self.r)
+        section_pts = points[mask]
+        section_pts_list.append(section_pts)
+        avg_color = np.average(section_pts['r']) + np.average(section_pts['g']) + np.average(section_pts['b'])
+        avg_color_list.append(avg_color)
+
+        print("Average colors: ")
+        print(avg_color_list)
+
+        # remove glass index from lists
+        del(section_pts_list[skip_index])
+        del(avg_color_list[skip_index])
+
+        # get the outlier
+        sorted_color_list = avg_color_list.copy()
+        sorted_color_list.sort()
+
+        if abs(sorted_color_list[0] - sorted_color_list[1]) > abs(sorted_color_list[-1] - sorted_color_list[-2]):
+            outlier = sorted_color_list[0]
+        else:
+            outlier = sorted_color_list[-1]
+
+        outlier_index = avg_color_list.index(outlier)
+        print("Outlier index: " + str(outlier_index))
+
+        centroid = self.get_centroid(section_pts_list[outlier_index])
+
+        self.r = r_tmp
+
+        return centroid
+
 
 
 def main():
@@ -828,6 +953,7 @@ def main():
         task = myargv[1]
         rospy.init_node('robosoft_control')
         robosoft = Robosoft()
+
         req_gripper = graspRequest()
         robosoft.open_gripper_client.call(req_gripper)
         robosoft.check_mission_done()
@@ -845,6 +971,10 @@ def main():
         else:
             print("Select among: task1, task2, task3")
 
+
+        # robosoft.go_home_parallel()
+        # rospy.sleep(20)
+        # robosoft.go_home_pick()
 
         # req_gripper = graspRequest()
         # # req_gripper.move.x = 0.03

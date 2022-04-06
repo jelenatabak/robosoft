@@ -12,14 +12,6 @@ x4: -0.054
 x5: -0.254
 x6: -0.454
 
-# x1: -0.254
-# x2: -0.254
-# x3: -0.054
-
-# x4: -0.454
-# x5: -0.454
-# x6: -0.454
-
 planning_group: 'manipulator'
 base_frame: 'base_link'
 camera_frame: 'camera'

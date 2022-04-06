@@ -1,0 +1,56 @@
+TODO:
+-instalirati urcap na robota (usb u robota)
+1. provjeri ip robota (settings -> network)
+2. instalacija external controla (ur -> program -> urcaps -> + -> .urcap s usb-a -> reboot)
+3. postavi ip (installation -> urcaps -> external control -> ip svog laptopa (stavi istu mrežu kao ur))
+4. program -> insert external control
+
+- kalibrirati robota (poslije pinga)
+roslaunch ur_calibration calibration_correction.launch robot_ip:=<robot_ip> target_filename:="/home/jelena/ur_calib.yaml"
+
+- montirati sofiu tako da se osi flange i kamere poklapaju (označiti nekako mount na ruci!)
+- postaviti robota u normalan home, umjeriti kameru
+- snimiti poze - 4 yaml filea (home, capture, home_pick, capture_pick) - provjeriti iz homea jednog u drugi
+- plotat pc, pa pc podijeljen, provjeriti da je kalibracija dobra
+- odrediti paralelnu i okomitu orijentaciju (cpp build)
+- provjeriti kolizije (ur config odgovara li hvataljka i board (kolizija je negativna da omoguci pick kontakt))
+- provjeriti da je robot unutar ograničenja
+- odradit sve zadatke :)
+- tunirat pour zakret
+
+
+
+SALABAHTER:
+roslaunch ur_robot_driver ur5e_bringup.launch robot_ip:= kinematics_config:=/home/jelena/ur_calib.yaml
+roslaunch robosoft ur_robosoft.launch
+rosrun robosoft UR5e 
+rosrun robosoft ur_control.py task
+
+
+
+KALIBRACIJA:
+roslaunch realsense2_camera rs_rgbd.launch
+
+export UAV_NAMESPACE='/'
+roslaunch mood_ros detection_manager_nodelet.launch
+
+rosrun rqt_image_view rqt_image_view
+topic /mood/labeled_image 
+
+roslaunch ur_robot_driver ur5e_bringup.launch robot_ip:= kinematics_config:=/home/jelena/ur_calib.yaml
+
+rosrun camera_calib sync_blob.py 
+
+rostopic pub -1 /calib/record_pose std_msgs/Bool "data: false"
+loop...
+
+rostopic pub -1 /calib/optimize std_msgs/Bool "data: false"
+
+kill sync_blob & run in the same terminal:
+rosrun camera_calib optimize_class.py
+
+
+
+SAMO MOVEIT:
+roslaunch ur5e_moveit_config ur5e_moveit_planning_execution.launch
+roslaunch ur5e_moveit_config moveit_rviz.launch rviz_config:=$(rospack find ur5e_moveit_config)/launch/moveit.rviz

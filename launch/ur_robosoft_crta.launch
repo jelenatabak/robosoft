@@ -3,8 +3,8 @@
 
     <include file="$(find realsense2_camera)/launch/rs_rgbd.launch" />
     <include file="$(find dynamixel_workbench_controllers)/launch/dynamixel_controllers.launch" /> 
-    <include file="$(find ur5e_moveit_config)/launch/ur5e_moveit_planning_execution.launch" />
-    
+
+    <!-- <node pkg="tf" type="static_transform_publisher" name="camera_link_broadcaster" args="-5.73612084e-02  5.32204596e-02  1.06781927e-01  3.96507500e+03 -1.74814942e+03  8.32711535e+05 -5.58854564e+05 /tool0 /camera 100" /> -->
     <node pkg="tf" type="static_transform_publisher" name="camera_link_broadcaster" args="-6.43850345e-02  6.29696297e-02  1.43632294e-01 -4.59862325e-04 9.21444955e-03  8.34137288e-01 -5.51479706e-01 /tool0 /camera 100" />
 
 </launch>

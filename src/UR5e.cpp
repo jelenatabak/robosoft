@@ -60,9 +60,9 @@ UR5e::UR5e (ros::NodeHandle& nodeHandle) {
     float z_board;
     nodeHandle.getParam("/robosoft/z", z_board);
     std::vector<moveit_msgs::CollisionObject> collision_objects;
-    collision_objects.push_back(addBox("board", 2,2,0.01,-1,0,-0.03));
-    collision_objects.push_back(addBox("board2", 2,0.7,0.01,-1,-0.82,0.095));
-    collision_objects.push_back(addBox("wall", 2,0.2,2,-1,0.75,0));
+    collision_objects.push_back(addBox("board", 2,2,0.01,-1,0,-0.02));      // TODO baord je ispod stvarnog da omoguci kontakt
+    // collision_objects.push_back(addBox("board2", 2,0.7,0.01,-1,-0.82,0.095));
+    // collision_objects.push_back(addBox("wall", 2,0.2,2,-1,0.75,0));
     planning_scene_interface_.addCollisionObjects(collision_objects);
     std::cout << "Added collision" << std::endl;
     std::cout << "Robot is ready!" << std::endl;
@@ -246,13 +246,6 @@ void UR5e::goToPosition() {
         // move_group_->setApproximateJointValueTarget(poseRef);
         move_group_->move();
 
-        // moveit_visual_tools::MoveItVisualTools visual_tools("base_link");
-        // const moveit::core::JointModelGroup* joint_model_group = move_group_->getCurrentState()->getJointModelGroup("manipulator");
-        // visual_tools.deleteAllMarkers();
-        // moveit::planning_interface::MoveGroupInterface::Plan my_plan;
-        // bool success = (move_group_->plan(my_plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
-        // visual_tools.publishAxisLabeled(poseRef, "pose1");
-        // visual_tools.publishTrajectoryLine(my_plan.trajectory_, joint_model_group);
         std::cout << "Done" << std::endl;
         move_group_->clearPathConstraints();
 
