@@ -1,3 +1,4 @@
+
 TODO:
 -instalirati urcap na robota (usb u robota)
 1. provjeri ip robota (settings -> network)
@@ -6,12 +7,12 @@ TODO:
 4. program -> insert external control
 
 - kalibrirati robota (poslije pinga)
-roslaunch ur_calibration calibration_correction.launch robot_ip:=<robot_ip> target_filename:="/home/jelena/ur_calib.yaml"
+roslaunch ur_calibration calibration_correction.launch robot_ip:=192.168.0.101 target_filename:="/home/jelena/ur_calib.yaml"
 
-- montirati sofiu tako da se osi flange i kamere poklapaju (označiti nekako mount na ruci!)
-- postaviti robota u normalan home, umjeriti kameru
-- snimiti poze - 4 yaml filea (home, capture, home_pick, capture_pick) - provjeriti iz homea jednog u drugi
-- plotat pc, pa pc podijeljen, provjeriti da je kalibracija dobra
+- postaviti robota u normalan home, montirati sofiu tako da se osi flange i kamere poklapaju (označiti nekako mount na ruci!)
+- umjeriti kameru
+- snimiti poze - 4 yaml filea (home, capture, home_pick, capture_pick) - provjeriti iz homea jednog u drugi, možda samo jedan za capture?
+- plotat pc, pa pc podijeljen, provjeriti da je kalibracija dobra, debugirat segmentaciju po boji
 - odrediti paralelnu i okomitu orijentaciju (cpp build)
 - provjeriti kolizije (ur config odgovara li hvataljka i board (kolizija je negativna da omoguci pick kontakt))
 - provjeriti da je robot unutar ograničenja
@@ -19,13 +20,11 @@ roslaunch ur_calibration calibration_correction.launch robot_ip:=<robot_ip> targ
 - tunirat pour zakret
 
 
-
 SALABAHTER:
-roslaunch ur_robot_driver ur5e_bringup.launch robot_ip:= kinematics_config:=/home/jelena/ur_calib.yaml
+roslaunch ur_robot_driver ur5e_bringup.launch robot_ip:=192.168.0.101  kinematics_config:=/home/jelena/ur_calib.yaml
 roslaunch robosoft ur_robosoft.launch
 rosrun robosoft UR5e 
 rosrun robosoft ur_control.py task
-
 
 
 KALIBRACIJA:
@@ -37,7 +36,7 @@ roslaunch mood_ros detection_manager_nodelet.launch
 rosrun rqt_image_view rqt_image_view
 topic /mood/labeled_image 
 
-roslaunch ur_robot_driver ur5e_bringup.launch robot_ip:= kinematics_config:=/home/jelena/ur_calib.yaml
+roslaunch ur_robot_driver ur5e_bringup.launch robot_ip:=192.168.0.101  kinematics_config:=/home/jelena/ur_calib.yaml
 
 rosrun camera_calib sync_blob.py 
 
@@ -48,7 +47,6 @@ rostopic pub -1 /calib/optimize std_msgs/Bool "data: false"
 
 kill sync_blob & run in the same terminal:
 rosrun camera_calib optimize_class.py
-
 
 
 SAMO MOVEIT:

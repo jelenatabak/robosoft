@@ -60,7 +60,7 @@ UR5e::UR5e (ros::NodeHandle& nodeHandle) {
     float z_board;
     nodeHandle.getParam("/robosoft/z", z_board);
     std::vector<moveit_msgs::CollisionObject> collision_objects;
-    collision_objects.push_back(addBox("board", 2,2,0.01,-1,0,-0.02));      // TODO baord je ispod stvarnog da omoguci kontakt
+    collision_objects.push_back(addBox("board", 2,2,0.01,-1,0,-0.03));      
     // collision_objects.push_back(addBox("board2", 2,0.7,0.01,-1,-0.82,0.095));
     // collision_objects.push_back(addBox("wall", 2,0.2,2,-1,0.75,0));
     planning_scene_interface_.addCollisionObjects(collision_objects);
@@ -214,16 +214,20 @@ void UR5e::goToPosition() {
                 move_group_->setPathConstraints(test_constraints);
 
             }
-            poseRef.orientation.x = 0.5927576;
-            poseRef.orientation.y = 0.3918398;
-            poseRef.orientation.z = -0.3928394;
-            poseRef.orientation.w = 0.5837613;
+            poseRef.orientation.x = 0.0;
+            poseRef.orientation.y = 0.7071068;
+            poseRef.orientation.z = 0.7071068;
+            poseRef.orientation.w = 0.0;
+            // poseRef.orientation.x = -0.7071068;
+            // poseRef.orientation.y = 0.0;
+            // poseRef.orientation.z = 0.0;
+            // poseRef.orientation.w = 0.7071068;
         } 
         else if (perpendicular_) {
-            poseRef.orientation.x = 0.823;
-            poseRef.orientation.y = 0.567;
-            poseRef.orientation.z = 0.023;
-            poseRef.orientation.w = 0.001;
+            poseRef.orientation.x = 0.0;
+            poseRef.orientation.y = 1;
+            poseRef.orientation.z = 0.0;
+            poseRef.orientation.w = 0.0;
         }
 
         else if (perpendicular_rotate_) {
