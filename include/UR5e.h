@@ -7,6 +7,7 @@
 #include <moveit/move_group_interface/move_group_interface.h>
 #include <moveit/planning_scene_interface/planning_scene_interface.h>
 #include <moveit_msgs/CollisionObject.h>
+// #include <moveit_visual_tools/moveit_visual_tools.h>
 
 #include <std_srvs/Trigger.h>
 #include <std_msgs/Bool.h>
@@ -86,4 +87,5 @@ class UR5e {
     moveit::planning_interface::PlanningSceneInterface planning_scene_interface_;
 
     double velocity_scale_, acceleration_scale_;
+    double pour_angle_;
 };

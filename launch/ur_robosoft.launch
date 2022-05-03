@@ -1,13 +1,16 @@
 <launch>
     <rosparam command="load" file="$(find robosoft)/resources/ur_config.yaml" ns='robosoft'/>
 
-    <!-- <include file="$(find realsense2_camera)/launch/rs_rgbd.launch" />
-    <include file="$(find dynamixel_workbench_controllers)/launch/dynamixel_controllers.launch" /> -->
-    <!-- <include file="$(find panda_moveit_config)/launch/panda_control_moveit_rviz.launch">
-        <arg name="load_gripper" value="false"/>
-        <arg name="robot_ip" value="172.16.0.2"/>
-    </include> -->
+    <include file="$(find realsense2_camera)/launch/rs_rgbd.launch" />
+    <include file="$(find dynamixel_workbench_controllers)/launch/dynamixel_controllers.launch" /> 
+    <include file="$(find ur5e_moveit_config)/launch/ur5e_moveit_planning_execution.launch" />
+    
+    <!-- <node pkg="tf" type="static_transform_publisher" name="camera_link_broadcaster" args="2.31392775e-02  9.64249827e-02  7.21990626e-02  9.43917543e-03
+ -6.32525288e-04  9.99947711e-01 -3.88296350e-03 /tool0 /camera 100" /> -->
+    <!-- <node pkg="tf" type="static_transform_publisher" name="camera_link_broadcaster" args="2.31392775e-02  0.0872  0.0806  9.43917543e-03
+ -6.32525288e-04  9.99947711e-01 -3.88296350e-03 /tool0 /camera 100" /> -->
 
-    <node pkg="tf" type="static_transform_publisher" name="hand_camera_tf" args="-0.0492027  -0.1906576  -0.0674672   0.01624818  0.00715598 -0.01470204 0.99973428 /tool0 /camera 100"/> 
-    <!-- <node pkg="tf" type="static_transform_publisher" name="camera_tf" args="0 0 0 0 0 0 /panda_camera /camera_color_optical_frame 100"/>  -->
+    <node pkg="tf" type="static_transform_publisher" name="camera_broadcaster" args="2.31392775e-02  9.64249827e-02  13.51990626e-02  9.43917543e-03
+ -6.32525288e-04  9.99947711e-01 -3.88296350e-03 /tool0 /camera 100" />
+
 </launch>
