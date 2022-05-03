@@ -15,7 +15,7 @@ UR5e::UR5e (ros::NodeHandle& nodeHandle) {
     acceleration_scale_ = 1;
 
     openPosition_ = 3000;
-    closedPosition_ = 4100;
+    closedPosition_ = 4200;
 
     dynamixelCommand_.request.id = 1;
     dynamixelCommand_.request.addr_name = "Goal_Position";
@@ -202,8 +202,8 @@ void UR5e::goToPosition() {
             poseRef.orientation.w = 0.5;
         } 
         else if (perpendicular_) {
-            poseRef.orientation.x = -0.7071068;
-            poseRef.orientation.y = 0.7071068;
+            poseRef.orientation.x = 1;
+            poseRef.orientation.y = 0;
             poseRef.orientation.z = 0;
             poseRef.orientation.w = 0;
         }

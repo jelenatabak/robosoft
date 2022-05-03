@@ -516,43 +516,75 @@ class Robosoft(object):
         print("Box centroid: ")
         print(box_centroid)
 
-        up_pt = copy.deepcopy(box_centroid)
-        up_pt.z = self.get_max(box_pc, 'z') + 0.45
+        up_box_pt = copy.deepcopy(box_centroid)
+        up_box_pt.z = self.get_max(box_pc, 'z') + 0.45
         place_pt = copy.deepcopy(box_centroid)
         place_pt.z = self.get_min(box_pc, 'z') + 0.4
 
+        req_gripper = closeGripperRequest()
         req = positionGoalRequest()
         req.parallel = False
         req.perpendicular = True
         req.perpendicular_rotate = False
 
-        req_gripper = graspRequest()
-        req_gripper.move.x = 0
-
         for i in A_ind:
             pc = self.pts_A[i]
-            grasp = self.grasp(pc)
-            if grasp == 3:
-                req.perpendicular = False
-                req.perpendicular_rotate = True
+            # grasp = self.grasp(pc)
+            # if grasp == 3:
+            #     req.perpendicular = False
+            #     req.perpendicular_rotate = True
+            centroid_pt = self.get_centroid(pc)
+
+            approach_pt = copy.deepcopy(centroid_pt)
+            approach_pt.z += 0.4
+            grasp_pt = copy.deepcopy(centroid_pt)
+            grasp_pt.z += 0.3
+            up_pt = copy.deepcopy(grasp_pt)
+            up_pt.z += 0.1
+
+            req_gripper.move.x = 0
+            req_gripper.move.z = -0.01
+
+            req.position = approach_pt
+            self.go_to_position_goal_client.call(req)
+            self.check_mission_done()
+            print("Moved to approach pose")
+
+            req.position = grasp_pt
+            self.go_to_position_goal_client.call(req)
+            self.check_mission_done()
+            print("Moved to grasp pose")
+    
+            self.close_gripper_client.call(req_gripper)
+            self.check_mission_done()
+            print("Object grasped")
+
+            rospy.sleep(5)
 
             req.position = up_pt
             self.go_to_position_goal_client.call(req)
             self.check_mission_done()
-            print("Moved above box")
+            print("Moved above object")
 
-            rospy.sleep(5)
+            req.position = up_box_pt
+            self.go_to_position_goal_client.call(req)
+            self.check_mission_done()
+            print("Moved above box")
 
             req.position = place_pt
             self.go_to_position_goal_client.call(req)
             self.check_mission_done()
             print("Moved to place pose")
 
+            req_gripper.move.x = 0
+            req_gripper.move.z = 0
+
+
             self.open_gripper_client.call(req_gripper)
             self.check_mission_done()
             print("Object placed")
 
-            req.position = up_pt
+            req.position = up_box_pt
             self.go_to_position_goal_client.call(req)
             self.check_mission_done()
             print("Moved above box")
