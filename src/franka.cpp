@@ -14,8 +14,8 @@ UR5e::UR5e (ros::NodeHandle& nodeHandle) {
     velocity_scale_ = 1;
     acceleration_scale_ = 1;
 
-    openPosition_ = 3000;
-    closedPosition_ = 4200;
+    openPosition_ = 1800;
+    closedPosition_ = 600;
 
     dynamixelCommand_.request.id = 1;
     dynamixelCommand_.request.addr_name = "Goal_Position";
@@ -51,7 +51,7 @@ UR5e::UR5e (ros::NodeHandle& nodeHandle) {
     float z_board;
     nodeHandle.getParam("/robosoft/z", z_board);
     std::vector<moveit_msgs::CollisionObject> collision_objects;
-    collision_objects.push_back(addBox("board", 0.53,1.27,z_board+0.01,0.55,0,0));
+    collision_objects.push_back(addBox("board", 0.53,1.27,z_board+0.01,0.2,0,0));
     planning_scene_interface_.addCollisionObjects(collision_objects);
     std::cout << "Added collision" << std::endl;
 

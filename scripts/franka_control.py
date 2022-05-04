@@ -23,7 +23,6 @@ class Robosoft(object):
 
         self.y1 = rospy.get_param('/robosoft/y1')
         self.y2 = rospy.get_param('/robosoft/y2')
-
         self.y3 = rospy.get_param('/robosoft/y3')
         self.y4 = rospy.get_param('/robosoft/y4')
         self.y5 = rospy.get_param('/robosoft/y5')
@@ -169,6 +168,8 @@ class Robosoft(object):
             points = ros_numpy.point_cloud2.pointcloud2_to_array(self.pc_glob)
             self.points_list.append(points)
 
+        self.points = np.concatenate(self.points_list)
+
     def record_devel(self, joint_goals):
         for i in range(len(joint_goals)):
             self.go_to_joint_goal_client.call(joint_goals[i])
@@ -285,7 +286,7 @@ class Robosoft(object):
     def franka_count_pts(self):
         z_values = self.points['z']
 
-        mask = ~np.isnan(z_values) * (z_values > self.z)
+        mask = ~np.isnan(z_values) * (z_values > self.z) * (z_values < self.z + 0.15)       # remove sofia fingers
         pts_z = self.points[mask]
         x_values = pts_z['x']
         y_values = pts_z['y']
@@ -351,78 +352,6 @@ class Robosoft(object):
 
         mask = (x_values > self.x2-self.r) * (x_values < self.x2+self.r) * \
             (y_values > self.y3-self.r) * (y_values < self.y3+self.r)
-        self.pts_B_count[5] += (len(pts_z[mask]))
-        self.pts_B.append(pts_z[mask])
-
-        print('Done with pc filtering')
-        print('Pts A count: ', self.pts_A_count)
-        print('Pts B count: ', self.pts_B_count)
-
-    def ur_count_pts(self):
-        z_values = self.points['z']
-
-        mask = ~np.isnan(z_values) * (z_values > self.z)
-        pts_z = self.points[mask]
-        x_values = pts_z['x']
-        y_values = pts_z['y']
-
-        mask = (x_values > self.x4-self.r) * (x_values < self.x4+self.r) * \
-            (y_values > self.y1-self.r) * (y_values < self.y1+self.r)
-        self.pts_A_count[0] += (len(pts_z[mask]))
-        self.pts_A.append(pts_z[mask])
-
-        mask = (x_values > self.x5-self.r) * (x_values < self.x5+self.r) * \
-            (y_values > self.y1-self.r) * (y_values < self.y1+self.r)
-        self.pts_A_count[1] += (len(pts_z[mask]))
-        self.pts_A.append(pts_z[mask])
-
-        mask = (x_values > self.x6-self.r) * (x_values < self.x6+self.r) * \
-            (y_values > self.y1-self.r) * (y_values < self.y1+self.r)
-        self.pts_A_count[2] += (len(pts_z[mask]))
-        self.pts_A.append(pts_z[mask])
-
-        mask = (x_values > self.x4-self.r) * (x_values < self.x4+self.r) * \
-            (y_values > self.y2-self.r) * (y_values < self.y2+self.r)
-        self.pts_A_count[3] += (len(pts_z[mask]))
-        self.pts_A.append(pts_z[mask])
-
-        mask = (x_values > self.x5-self.r) * (x_values < self.x5+self.r) * \
-            (y_values > self.y2-self.r) * (y_values < self.y2+self.r)
-        self.pts_A_count[4] += (len(pts_z[mask]))
-        self.pts_A.append(pts_z[mask])
-
-        mask = (x_values > self.x6-self.r) * (x_values < self.x6+self.r) * \
-            (y_values > self.y2-self.r) * (y_values < self.y2+self.r)
-        self.pts_A_count[5] += (len(pts_z[mask]))
-        self.pts_A.append(pts_z[mask])
-
-        mask = (x_values > self.x1-self.r) * (x_values < self.x1+self.r) * \
-            (y_values > self.y1-self.r) * (y_values < self.y1+self.r)
-        self.pts_B_count[0] += (len(pts_z[mask]))
-        self.pts_B.append(pts_z[mask])
-
-        mask = (x_values > self.x2-self.r) * (x_values < self.x2+self.r) * \
-            (y_values > self.y1-self.r) * (y_values < self.y1+self.r)
-        self.pts_B_count[1] += (len(pts_z[mask]))
-        self.pts_B.append(pts_z[mask])
-
-        mask = (x_values > self.x3-self.r) * (x_values < self.x3+self.r) * \
-            (y_values > self.y1-self.r) * (y_values < self.y1+self.r)
-        self.pts_B_count[2] += (len(pts_z[mask]))
-        self.pts_B.append(pts_z[mask])
-
-        mask = (x_values > self.x1-self.r) * (x_values < self.x1+self.r) * \
-            (y_values > self.y2-self.r) * (y_values < self.y2+self.r)
-        self.pts_B_count[3] += (len(pts_z[mask]))
-        self.pts_B.append(pts_z[mask])
-
-        mask = (x_values > self.x2-self.r) * (x_values < self.x2+self.r) * \
-            (y_values > self.y2-self.r) * (y_values < self.y2+self.r)
-        self.pts_B_count[4] += (len(pts_z[mask]))
-        self.pts_B.append(pts_z[mask])
-
-        mask = (x_values > self.x3-self.r) * (x_values < self.x3+self.r) * \
-            (y_values > self.y2-self.r) * (y_values < self.y2+self.r)
         self.pts_B_count[5] += (len(pts_z[mask]))
         self.pts_B.append(pts_z[mask])
 
@@ -589,11 +518,11 @@ class Robosoft(object):
         print(box_centroid)
 
         up_box_pt = copy.deepcopy(box_centroid)
-        up_box_pt.z = self.get_max(box_pc, 'z') + 0.45
+        up_box_pt.z = self.get_max(box_pc, 'z') + 0.35
         place_pt = copy.deepcopy(box_centroid)
-        place_pt.z = self.get_min(box_pc, 'z') + 0.4
+        place_pt.z = self.get_max(box_pc, 'z') + 0.28
 
-        req_gripper = closeGripperRequest()
+        req_gripper = graspRequest()
         req = positionGoalRequest()
         req.parallel = False
         req.perpendicular = True
@@ -608,14 +537,15 @@ class Robosoft(object):
             centroid_pt = self.get_centroid(pc)
 
             approach_pt = copy.deepcopy(centroid_pt)
-            approach_pt.z += 0.4
+            approach_pt.z += 0.33
             grasp_pt = copy.deepcopy(centroid_pt)
-            grasp_pt.z += 0.3
+            grasp_pt.z += 0.24
             up_pt = copy.deepcopy(grasp_pt)
             up_pt.z += 0.1
 
             req_gripper.move.x = 0
-            req_gripper.move.z = -0.01
+            if self.get_dimensions(pc)[2] < 0.04:
+                req_gripper.move.z = -0.01
 
             req.position = approach_pt
             self.go_to_position_goal_client.call(req)
@@ -631,12 +561,14 @@ class Robosoft(object):
             self.check_mission_done()
             print("Object grasped")
 
-            rospy.sleep(5)
-
+            rospy.sleep(3)
+            
             req.position = up_pt
             self.go_to_position_goal_client.call(req)
             self.check_mission_done()
             print("Moved above object")
+
+            self.go_home()
 
             req.position = up_box_pt
             self.go_to_position_goal_client.call(req)
@@ -674,7 +606,7 @@ class Robosoft(object):
         req.perpendicular = False
         req.perpendicular_rotate = False
 
-        req_gripper = closeGripperRequest()
+        req_gripper = graspRequest()
 
         for i in range(len(A_ind)):
             pot_i = A_ind[i]
@@ -700,7 +632,7 @@ class Robosoft(object):
             self.check_mission_done()
             print("Moved to grasp pose")
 
-            req_gripper = closeGripperRequest()
+            req_gripper = graspRequest()
             req_gripper.move.x = 0.03
             self.close_gripper_client.call(req_gripper)
             self.check_mission_done()
@@ -859,7 +791,7 @@ class Robosoft(object):
         self.check_mission_done()
         print("Moved to glass")
 
-        req_gripper = closeGripperRequest()
+        req_gripper = graspRequest()
         req_gripper.move.x = 0.03 
         self.close_gripper_client.call(req_gripper)
         self.check_mission_done()
@@ -920,7 +852,7 @@ def main():
 
 
         joint_goals = robosoft.read_vectors_from_yaml(
-            'franka_record_low.yaml')
+            'franka_record.yaml')
         robosoft.record(joint_goals)
         robosoft.franka_count_pts()
         print("Done with recording")
@@ -943,18 +875,24 @@ def main():
         # pt.header.frame_id = robosoft.base_frame
 
         # while not rospy.is_shutdown():
+        #     pc_test = ros_numpy.point_cloud2.array_to_pointcloud2(robosoft.points, frame_id=robosoft.base_frame)
+        #     robosoft.test_publisher.publish(pc_test)
+        #     rospy.sleep(5)
+
+
+        # while not rospy.is_shutdown():
         #     for i in range(3):
         #         print ("A" + str(i))
         #         pc = robosoft.pts_A[i]
-        #         centroid = robosoft.get_centroid(pc)
-        #         pt.point = centroid
+        #         # centroid = robosoft.get_centroid(pc)
+        #         # pt.point = centroid
         #         pc_test = ros_numpy.point_cloud2.array_to_pointcloud2(
         #             pc, frame_id=robosoft.base_frame)
         #         robosoft.test_publisher.publish(pc_test)
-        #         robosoft.point_publisher.publish(pt)
-        #         rospy.sleep(10)
+        #         #robosoft.point_publisher.publish(pt)
+        #         rospy.sleep(5)
 
-            # for i in range(6):
+            # for i in range(3):
             #     print ("B" + str(i))
             #     pc = robosoft.pts_B[i]
             #     # centroid = robosoft.get_centroid(pc)
@@ -962,7 +900,7 @@ def main():
             #     pc_test = ros_numpy.point_cloud2.array_to_pointcloud2(
             #         pc, frame_id=robosoft.base_frame)
             #     robosoft.test_publisher.publish(pc_test)
-            #     robosoft.point_publisher.publish(pt)
+            #     #robosoft.point_publisher.publish(pt)
             #     rospy.sleep(5)
 
 
