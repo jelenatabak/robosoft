@@ -892,16 +892,16 @@ def main():
         #         #robosoft.point_publisher.publish(pt)
         #         rospy.sleep(5)
 
-            # for i in range(3):
-            #     print ("B" + str(i))
-            #     pc = robosoft.pts_B[i]
-            #     # centroid = robosoft.get_centroid(pc)
-            #     # pt.point = centroid
-            #     pc_test = ros_numpy.point_cloud2.array_to_pointcloud2(
-            #         pc, frame_id=robosoft.base_frame)
-            #     robosoft.test_publisher.publish(pc_test)
-            #     #robosoft.point_publisher.publish(pt)
-            #     rospy.sleep(5)
+        #     for i in range(3):
+        #         print ("B" + str(i))
+        #         pc = robosoft.pts_B[i]
+        #         # centroid = robosoft.get_centroid(pc)
+        #         # pt.point = centroid
+        #         pc_test = ros_numpy.point_cloud2.array_to_pointcloud2(
+        #             pc, frame_id=robosoft.base_frame)
+        #         robosoft.test_publisher.publish(pc_test)
+        #         #robosoft.point_publisher.publish(pt)
+        #         rospy.sleep(5)
 
 
 if __name__ == "__main__":
